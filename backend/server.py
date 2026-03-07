@@ -543,10 +543,10 @@ async def lifespan(app: FastAPI):
 
     # Startup — verify SMTP configuration
     if not all([SMTP_HOST, SMTP_USER, SMTP_PASS]):
-        logger.warning("⚠️  SMTP NOT CONFIGURED - Password reset emails WILL NOT be sent")
+        logger.warning("SMTP NOT CONFIGURED - Password reset emails WILL NOT be sent")
         logger.warning("   Set SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM in .env")
     else:
-        logger.info(f"✅ SMTP configured: {SMTP_USER} @ {SMTP_HOST}:{SMTP_PORT}")
+        logger.info(f"SMTP configured: {SMTP_USER} @ {SMTP_HOST}:{SMTP_PORT}")
 
     # Create indexes for performance
     try:
