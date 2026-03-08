@@ -29,6 +29,6 @@ try:
     client = AsyncIOMotorClient(mongo_url)
     db = client[db_name]
     logger.info("MongoDB client initialized")
-except Exception as e:  # type: ignore
+except Exception as e:
     logger.error(f"Failed to initialize MongoDB client: {e}")
     raise
