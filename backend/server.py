@@ -189,10 +189,10 @@ The KudosD Team
             ),
             timeout=10
         )
-        logger.info(f"✅ Password reset email sent to {email}")
+        logger.info(f"Password reset email sent to {email}")
         return True
     except Exception as e:
-        logger.error(f"❌ Failed to send reset email to {email}")
+        logger.error(f"Failed to send reset email to {email}")
         logger.error(f"   Error type: {type(e).__name__}")
         logger.error(f"   Error: {str(e)}")
         logger.error(f"   Reset link: {reset_link}")
