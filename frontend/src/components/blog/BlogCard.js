@@ -2,7 +2,8 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Clock, Eye, MessageSquare, Flame } from 'lucide-react';
 
-export default function BlogCard({ blog }) {
+export default function BlogCard({ blog }) 
+{
     const formatDate = (dateStr) => {
         if (!dateStr) return '';
         return new Date(dateStr).toLocaleDateString('en-US', {
