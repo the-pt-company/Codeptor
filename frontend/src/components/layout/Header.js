@@ -78,12 +78,12 @@ export const Header = () => {
                                 </Link>
 
 
-                                {/* Careers */}
+                                {/* Contributions */}
                                 <Link
-                                    to="/careers"
+                                    to="/contribute"
                                     className="text-sm text-foreground hover:text-accent transition-colors px-3 py-2 rounded-md hover:bg-muted"
                                 >
-                                    Careers
+                                    Contributions
                                 </Link>
 
                                 {/* Theme Toggle */}
@@ -113,12 +113,12 @@ export const Header = () => {
                                 </Link>
 
 
-                                {/* Careers - visible to everyone */}
+                                {/* Contributions - visible to everyone */}
                                 <Link
-                                    to="/careers"
+                                    to="/contribute"
                                     className="text-sm text-foreground hover:text-accent transition-colors px-3 py-2 rounded-md hover:bg-muted"
                                 >
-                                    Careers
+                                    Contributions
                                 </Link>
 
                                 {/* Theme Toggle */}

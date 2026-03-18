@@ -122,6 +122,10 @@ export default function PublishProject() {
                     toast.error('Add at least one technology');
                     return false;
                 }
+                if (!formData.github_url.trim()) {
+                    toast.error('GitHub Repository URL is mandatory for contribution');
+                    return false;
+                }
                 return true;
             case 3:
                 return true;
@@ -155,7 +159,7 @@ export default function PublishProject() {
                 category: formData.category,
                 status: formData.status === 'active' ? 'completed' :
                     formData.status === 'in_progress' ? 'in_progress' : 'archived',
-                github_url: formData.github_url || null,
+                github_url: formData.github_url,
                 live_url: formData.live_url || null,
                 thumbnail_url: null, // TODO: Implement file upload
                 media_urls: []
@@ -405,7 +409,7 @@ function Step2TechLinks({ formData, updateField, showVersionForm, setShowVersion
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label className="block text-sm font-medium text-foreground mb-2">
-                        GitHub Repository URL
+                        GitHub Repository URL <span className="text-destructive">*</span>
                     </label>
                     <input
                         type="url"

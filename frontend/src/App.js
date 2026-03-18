@@ -10,7 +10,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Explore from './pages/Explore';
-import Careers from './pages/Careers';
+import Contribute from './pages/Contribute';
 import PublishProject from './pages/PublishProject';
 import Profile from './pages/Profile';
 import Settings from './pages/Settings';
@@ -35,7 +35,7 @@ function App() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/explore" element={<Explore />} />
-                <Route path="/careers" element={<Careers />} />
+                <Route path="/contribute" element={<Contribute />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password/:token" element={<ResetPassword />} />
                 <Route path="/profile/:username" element={<Profile />} />

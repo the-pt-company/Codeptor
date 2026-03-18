@@ -44,7 +44,7 @@ export const Footer = () => {
                         <h4 className="font-heading font-bold text-lg mb-6 text-foreground">Platform</h4>
                         <ul className="space-y-4">
                             <li><Link to="/explore" className="text-muted-foreground hover:text-foreground transition-colors">Explore Projects</Link></li>
-                            <li><Link to="/careers" className="text-muted-foreground hover:text-foreground transition-colors">Career Hub</Link></li>
+                            <li><Link to="/contribute" className="text-muted-foreground hover:text-foreground transition-colors">Contributions</Link></li>
                             <li><Link to="/publish" className="text-muted-foreground hover:text-foreground transition-colors">Publish Project</Link></li>
                             <li><Link to="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">Dev Dashboard</Link></li>
                         </ul>

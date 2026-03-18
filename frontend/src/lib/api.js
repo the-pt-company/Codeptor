@@ -93,10 +93,5 @@ export const analyticsAPI = {
     getAllStats: () => analyticsClient.get('/api/analytics/stats'),
 };
 
-// Job APIs
-export const jobAPI = {
-    getLatest: (params) => api.get('/api/jobs', { params }),
-};
-
 
 export default api;
