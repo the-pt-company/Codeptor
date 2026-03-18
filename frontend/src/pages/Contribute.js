@@ -85,7 +85,7 @@ export default function Contribute() {
                     </div>
                     <div className="relative">
                         <h1 className="font-heading font-bold text-3xl sm:text-4xl tracking-tight text-foreground mb-3">
-                            Project Contribution Feed
+                            Project Contribute Feed
                         </h1>
                         <p className="text-muted-foreground max-w-2xl mx-auto mb-4">
                             Discover open-source projects hosted by our community. 
@@ -187,7 +187,7 @@ export default function Contribute() {
                     {!loading && !error && filteredProjects.length > 0 && (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {filteredProjects.map(project => (
-                                <ProjectContributionCard key={project.project_id} project={project} />
+                                <ProjectContributeCard key={project.project_id} project={project} />
                             ))}
                         </div>
                     )}
@@ -197,7 +197,7 @@ export default function Contribute() {
                         <div className="text-center py-24 bg-muted/30 rounded-3xl border-2 border-dashed border-border">
                             <Rocket className="w-16 h-16 mx-auto text-muted-foreground/20 mb-6" />
                             <h3 className="text-lg font-medium text-foreground mb-2">
-                                {searchQuery ? 'No matching projects found' : 'No projects available for contribution yet'}
+                                {searchQuery ? 'No matching projects found' : 'No projects available to contribute yet'}
                             </h3>
                             <p className="text-muted-foreground max-w-sm mx-auto mb-8">
                                 {searchQuery 
@@ -226,9 +226,9 @@ export default function Contribute() {
 }
 
 /**
- * Project Contribution Card Component
+ * Project Contribute Card Component
  */
-function ProjectContributionCard({ project }) {
+function ProjectContributeCard({ project }) {
     const handleContribute = () => {
         if (project.github_url) {
             window.open(project.github_url, '_blank', 'noopener,noreferrer');

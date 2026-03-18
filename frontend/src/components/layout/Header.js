@@ -78,12 +78,12 @@ export const Header = () => {
                                 </Link>
 
 
-                                {/* Contributions */}
+                                {/* Contribute */}
                                 <Link
                                     to="/contribute"
                                     className="text-sm text-foreground hover:text-accent transition-colors px-3 py-2 rounded-md hover:bg-muted"
                                 >
-                                    Contributions
+                                    Contribute
                                 </Link>
 
                                 {/* Theme Toggle */}
@@ -113,12 +113,12 @@ export const Header = () => {
                                 </Link>
 
 
-                                {/* Contributions - visible to everyone */}
+                                {/* Contribute - visible to everyone */}
                                 <Link
                                     to="/contribute"
                                     className="text-sm text-foreground hover:text-accent transition-colors px-3 py-2 rounded-md hover:bg-muted"
                                 >
-                                    Contributions
+                                    Contribute
                                 </Link>
 
                                 {/* Theme Toggle */}
