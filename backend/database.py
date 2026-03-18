@@ -10,15 +10,15 @@ logger = logging.getLogger(__name__)
 
 # Load environment variables
 ROOT_DIR = Path(__file__).parent
-load_dotenv(ROOT_DIR / '.env')
+load_dotenv(ROOT_DIR.parent / '.env')
 
 # MongoDB connection
 try:
-    mongo_url = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
+    mongo_url = os.environ.get('MONGO_URL', 'mongodb+srv://database1:Tharunme77@cluster0.djdevrw.mongodb.net/myAppDB?retryWrites=true&w=majority')
     db_name = os.environ.get('DB_NAME', 'KudosDev')
     
     if not mongo_url:
-        logger.warning("MONGO_URL not found in env, using default: mongodb://localhost:27017")
+        logger.warning("MONGO_URL not found in env, using default: mongodb+srv://database1:Tharunme77@cluster0.djdevrw.mongodb.net/myAppDB?retryWrites=true&w=majority")
     
     if not db_name:
         logger.warning("DB_NAME not found in env, using default: KudosDev")
