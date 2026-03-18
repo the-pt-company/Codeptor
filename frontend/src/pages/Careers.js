@@ -6,8 +6,9 @@ import { useAuth } from '../context/AuthContext';
 import {
     Briefcase, Users, Rocket, Search, MapPin, Clock,
     Building2, ExternalLink, Code2, Github,
-    ArrowRight, Loader2, RefreshCw, Globe
+    ArrowRight, Loader2, RefreshCw, Globe, Calendar
 } from 'lucide-react';
+import { authAPI, jobAPI } from '../lib/api';
 
 // India-focused job platforms for "Browse More" section
 const JOB_PLATFORMS = [
@@ -42,46 +43,6 @@ const JOB_PLATFORMS = [
         searchUrl: (q) => `https://www.instahyre.com/search-jobs/?searchQuery=${encodeURIComponent(q || 'developer')}`,
     },
 ];
-
-// Strictly filter for India-located jobs only
-const isIndiaJob = (location) => {
-    if (!location) return false;
-    const loc = location.toLowerCase();
-    return (
-        loc.includes('india') ||
-        loc.includes('bangalore') ||
-        loc.includes('bengaluru') ||
-        loc.includes('mumbai') ||
-        loc.includes('hyderabad') ||
-        loc.includes('chennai') ||
-        loc.includes('pune') ||
-        loc.includes('delhi') ||
-        loc.includes('noida') ||
-        loc.includes('gurgaon') ||
-        loc.includes('gurugram') ||
-        loc.includes('kolkata') ||
-        loc.includes('ahmedabad') ||
-        loc.includes('jaipur') ||
-        loc.includes('kochi') ||
-        loc.includes('thiruvananthapuram') ||
-        loc.includes('coimbatore') ||
-        loc.includes('lucknow') ||
-        loc.includes('chandigarh') ||
-        loc.includes('indore')
-    );
-};
-
-// Format location to always show "India" context
-const formatLocationForIndia = (location) => {
-    if (!location) return 'India';
-    const loc = location.toLowerCase();
-    // If location just says "India", return as-is
-    if (loc.trim() === 'india') return 'India';
-    // If it contains India and a city, return as-is
-    if (loc.includes('india')) return location;
-    // If it's a city name, append India
-    return `${location}, India`;
-};
 
 // Sample contributor requests
 const CONTRIBUTOR_REQUESTS = [
@@ -119,6 +80,43 @@ const formatTimeAgo = (dateStr) => {
     return `${months} month${months > 1 ? 's' : ''} ago`;
 };
 
+// Strictly filter for India-located jobs only
+const isIndiaJob = (location) => {
+    if (!location) return false;
+    const loc = location.toLowerCase();
+    return (
+        loc.includes('india') ||
+        loc.includes('bangalore') ||
+        loc.includes('bengaluru') ||
+        loc.includes('mumbai') ||
+        loc.includes('hyderabad') ||
+        loc.includes('chennai') ||
+        loc.includes('pune') ||
+        loc.includes('delhi') ||
+        loc.includes('noida') ||
+        loc.includes('gurgaon') ||
+        loc.includes('gurugram') ||
+        loc.includes('kolkata') ||
+        loc.includes('ahmedabad') ||
+        loc.includes('jaipur') ||
+        loc.includes('kochi') ||
+        loc.includes('thiruvananthapuram') ||
+        loc.includes('coimbatore') ||
+        loc.includes('lucknow') ||
+        loc.includes('chandigarh') ||
+        loc.includes('indore')
+    );
+};
+
+// Format location to always show "India" context
+const formatLocationForIndia = (location) => {
+    if (!location) return 'India';
+    const loc = location.toLowerCase();
+    if (loc.trim() === 'india') return 'India';
+    if (loc.includes('india')) return location;
+    return `${location}, India`;
+};
+
 export default function Careers() {
     const { isAuthenticated } = useAuth();
     const [activeSection, setActiveSection] = useState('jobs');
@@ -127,6 +125,8 @@ export default function Careers() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [category, setCategory] = useState('software-dev');
+    const [days, setDays] = useState(null); // null means "All"
+    const [lastSync, setLastSync] = useState(null);
 
     const categories = [
         { value: 'software-dev', label: 'Software Dev' },
@@ -141,39 +141,32 @@ export default function Careers() {
         setLoading(true);
         setError(null);
         try {
-            const res = await fetch(
-                `https://remotive.com/api/remote-jobs?category=${category}&limit=50`
-            );
-            if (!res.ok) throw new Error('Failed to fetch jobs');
-            const data = await res.json();
-            // Filter for India-available jobs only
-            const indiaJobs = (data.jobs || []).filter(job =>
-                isIndiaJob(job.candidate_required_location)
-            );
-            setJobs(indiaJobs);
+            const params = {
+                category,
+                days: days || undefined,
+                search: searchQuery || undefined
+            };
+            const res = await jobAPI.getLatest(params);
+            setJobs(res.data.jobs || []);
+            setLastSync(res.data.last_sync);
         } catch (err) {
             console.error('Job fetch error:', err);
-            setError('Could not load jobs. Please try again.');
+            setError('Could not load jobs from backend. Please try again.');
             setJobs([]);
         } finally {
             setLoading(false);
         }
-    }, [category]);
+    }, [category, days, searchQuery]);
 
     useEffect(() => {
         fetchJobs();
     }, [fetchJobs]);
 
-    // Filter jobs by search query
-    const filteredJobs = jobs.filter(job => {
-        if (!searchQuery.trim()) return true;
-        const q = searchQuery.toLowerCase();
-        return (
-            job.title?.toLowerCase().includes(q) ||
-            job.company_name?.toLowerCase().includes(q) ||
-            job.tags?.some(t => t.toLowerCase().includes(q))
-        );
-    });
+    // We no longer need local filtering for searchQuery as the backend handles it,
+    // but we'll keep it as a fallback or for instant feedback if needed.
+    // For now, let's just use the jobs from the backend directly.
+    // Filter for India tasks for consistency with original app
+    const filteredJobs = jobs.filter(job => isIndiaJob(job.location));
 
     return (
         <div className="min-h-screen bg-background">
@@ -194,7 +187,7 @@ export default function Careers() {
                             Apply directly on the hiring platform.
                         </p>
                         <p className="text-xs text-muted-foreground/70">
-                            🇮🇳 India-focused · Jobs from Remotive, LinkedIn, Naukri & more · Updated every visit
+                            🇮🇳 India-focused · Jobs from Remotive, LinkedIn, Naukri & more · Dynamic Portal
                         </p>
                     </div>
                 </div>
@@ -250,32 +243,65 @@ export default function Careers() {
                 {/* Content */}
                 {activeSection === 'jobs' ? (
                     <div className="space-y-4">
-                        {/* Category Filter + Refresh */}
-                        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-                            <div className="flex gap-1.5 p-1 bg-muted rounded-lg overflow-x-auto">
-                                {categories.map(cat => (
-                                    <button
-                                        key={cat.value}
-                                        onClick={() => setCategory(cat.value)}
-                                        className={`
-                                            px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-all
-                                            ${category === cat.value
-                                                ? 'bg-card text-foreground shadow-sm'
-                                                : 'text-muted-foreground hover:text-foreground'}
-                                        `}
-                                    >
-                                        {cat.label}
-                                    </button>
-                                ))}
+                        {/* Filters & Refresh Row */}
+                        <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                                <div className="flex gap-1.5 p-1 bg-muted rounded-lg overflow-x-auto">
+                                    {categories.map(cat => (
+                                        <button
+                                            key={cat.value}
+                                            onClick={() => setCategory(cat.value)}
+                                            className={`
+                                                px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-all
+                                                ${category === cat.value
+                                                    ? 'bg-card text-foreground shadow-sm'
+                                                    : 'text-muted-foreground hover:text-foreground'}
+                                            `}
+                                        >
+                                            {cat.label}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                {/* Recently Posted Filter */}
+                                <div className="flex items-center gap-2 px-1 bg-muted rounded-lg p-1">
+                                    <span className="text-[10px] uppercase font-bold text-muted-foreground px-2">Refine:</span>
+                                    {[
+                                        { label: 'All', value: null },
+                                        { label: '7 Days', value: 7 },
+                                        { label: '30 Days', value: 30 },
+                                    ].map(f => (
+                                        <button
+                                            key={f.label}
+                                            onClick={() => setDays(f.value)}
+                                            className={`
+                                                px-3 py-1 rounded-md text-xs font-medium transition-all
+                                                ${days === f.value
+                                                    ? 'bg-card text-foreground shadow-sm'
+                                                    : 'text-muted-foreground hover:text-foreground'}
+                                            `}
+                                        >
+                                            {f.label}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
-                            <button
-                                onClick={fetchJobs}
-                                disabled={loading}
-                                className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
-                            >
-                                <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-                                Refresh
-                            </button>
+
+                            <div className="flex items-center gap-4">
+                                {lastSync && (
+                                    <span className="text-[10px] text-muted-foreground italic">
+                                        Last updated: {formatTimeAgo(lastSync)}
+                                    </span>
+                                )}
+                                <button
+                                    onClick={fetchJobs}
+                                    disabled={loading}
+                                    className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                                >
+                                    <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+                                    Refresh
+                                </button>
+                            </div>
                         </div>
 
                         {/* Loading State */}
@@ -303,7 +329,7 @@ export default function Careers() {
                         {!loading && !error && filteredJobs.length > 0 && (
                             <>
                                 <p className="text-xs text-muted-foreground">
-                                    Showing {filteredJobs.length} of {jobs.length} jobs
+                                    Showing {filteredJobs.length} {category} roles
                                 </p>
                                 {filteredJobs.map(job => (
                                     <JobCard key={job.id} job={job} />
@@ -313,37 +339,46 @@ export default function Careers() {
 
                         {/* Empty State */}
                         {!loading && !error && filteredJobs.length === 0 && (
-                            <div className="text-center py-12">
-                                <Briefcase className="w-12 h-12 mx-auto text-muted-foreground/50 mb-3" />
-                                <p className="text-muted-foreground mb-2">
-                                    {searchQuery
-                                        ? 'No India-based jobs match your search.'
-                                        : 'No India-based jobs found in this category right now.'}
+                            <div className="text-center py-20 bg-muted/30 rounded-2xl border border-dashed border-border">
+                                <Briefcase className="w-12 h-12 mx-auto text-muted-foreground/30 mb-4" />
+                                <p className="text-foreground font-medium mb-1">
+                                    No fresh jobs found matching your criteria
                                 </p>
-                                <p className="text-sm text-muted-foreground/70">
-                                    Try a different category or browse popular Indian job platforms below ↓
+                                <p className="text-sm text-muted-foreground mb-6">
+                                    Try adjusting your filters or search keywords.
                                 </p>
+                                <button
+                                    onClick={() => {
+                                        setSearchQuery('');
+                                        setDays(null);
+                                    }}
+                                    className="text-sm text-accent hover:underline"
+                                >
+                                    Clear all filters
+                                </button>
                             </div>
                         )}
 
-                        {/* Browse More on Other Platforms */}
-                        <div className="pt-6 border-t border-border mt-6">
-                            <h3 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
+                        {/* Browse More footer */}
+                        <div className="pt-10 mt-10 border-t border-border">
+                            <div className="flex items-center gap-2 mb-4">
                                 <Globe className="w-4 h-4 text-accent" />
-                                Browse More on Other Platforms
-                            </h3>
-                            <div className="flex flex-wrap gap-2">
+                                <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">
+                                    Explore More Job Portals
+                                </h3>
+                            </div>
+                            <div className="flex flex-wrap gap-3">
                                 {JOB_PLATFORMS.map(platform => (
                                     <a
                                         key={platform.name}
                                         href={platform.searchUrl(searchQuery)}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-all hover:shadow-sm ${platform.color}`}
+                                        className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-medium transition-all hover:scale-[1.02] active:scale-[0.98] ${platform.color}`}
                                     >
                                         <span>{platform.icon}</span>
                                         {platform.name}
-                                        <ExternalLink className="w-3 h-3 opacity-60" />
+                                        <ExternalLink className="w-3.5 h-3.5 opacity-50" />
                                     </a>
                                 ))}
                             </div>
@@ -352,30 +387,35 @@ export default function Careers() {
                 ) : (
                     <div className="space-y-4">
                         {/* Info Banner */}
-                        <div className="flex items-start gap-3 p-4 rounded-lg bg-accent/10 border border-accent/20 mb-6">
-                            <Rocket className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
+                        <div className="flex items-start gap-4 p-5 rounded-2xl bg-accent/5 border border-accent/10 mb-8">
+                            <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center flex-shrink-0">
+                                <Rocket className="w-5 h-5 text-accent" />
+                            </div>
                             <div>
-                                <p className="text-sm text-foreground font-medium">Collaborate on Projects</p>
-                                <p className="text-sm text-muted-foreground">
-                                    Developers are looking for collaborators for their open source and side projects.
-                                    Join a project and build together!
+                                <p className="text-base text-foreground font-semibold">Collaborate & Build Together</p>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                    Join passion-driven projects or find partners for your next big idea. 
+                                    Open-source contribution is the best way to grow your career.
                                 </p>
                             </div>
                         </div>
 
                         {/* Contributor Request Cards */}
-                        {CONTRIBUTOR_REQUESTS.map(req => (
-                            <ContributorCard key={req.id} request={req} />
-                        ))}
+                        <div className="grid grid-cols-1 gap-4">
+                            {CONTRIBUTOR_REQUESTS.map(req => (
+                                <ContributorCard key={req.id} request={req} />
+                            ))}
+                        </div>
 
                         {/* Post Request CTA */}
                         {isAuthenticated && (
-                            <div className="text-center pt-6 pb-2">
+                            <div className="text-center py-10 bg-card rounded-2xl border border-border mt-8">
+                                <p className="text-muted-foreground mb-4">Need help with your project?</p>
                                 <Link
                                     to="/dashboard"
-                                    className="inline-flex items-center gap-2 text-sm text-accent hover:underline"
+                                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-accent text-accent-foreground font-medium hover:bg-accent/90 transition-all shadow-sm"
                                 >
-                                    Looking for contributors? Add a request to your project
+                                    Add Contributor Request
                                     <ArrowRight className="w-4 h-4" />
                                 </Link>
                             </div>
@@ -383,6 +423,7 @@ export default function Careers() {
                     </div>
                 )}
             </main>
+
             <Footer />
         </div>
     );
@@ -409,8 +450,15 @@ const JobCard = ({ job }) => {
             href={job.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="group block rounded-lg border border-border bg-card p-5 hover:border-accent/50 hover:shadow-md transition-all"
+            className="group block rounded-lg border border-border bg-card p-5 hover:border-accent/50 hover:shadow-md transition-all relative overflow-hidden"
         >
+            {job.is_new && (
+                <div className="absolute top-0 right-0">
+                    <div className="bg-accent text-accent-foreground text-[10px] font-bold px-3 py-1 rounded-bl-lg uppercase tracking-wider shadow-sm">
+                        New
+                    </div>
+                </div>
+            )}
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                 <div className="flex-1">
                     {/* Title & Company */}
