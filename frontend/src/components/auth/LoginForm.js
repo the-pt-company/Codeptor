@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { Header } from '../layout/Header';
 import { Eye, EyeOff } from 'lucide-react';
 import { GoogleAuthButton } from './GoogleAuthButton';
+import { getErrorMessage } from '../../lib/utils';
 
 export const LoginForm = () => {
     const [email, setEmail] = useState('');
@@ -24,7 +25,7 @@ export const LoginForm = () => {
             navigate('/dashboard');
         } catch (error) {
             console.error('Login error details:', error);
-            toast.error(error.response?.data?.detail || 'Login failed');
+            toast.error(getErrorMessage(error, 'Login failed'));
         } finally {
             setLoading(false);
         }

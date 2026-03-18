@@ -14,8 +14,10 @@ import {
     VideoInput,
     MarkdownEditor,
     VersionEntry,
-    VersionEntryForm
+    VersionEntryForm,
+    DocumentUploader
 } from '../components/publish';
+import { getErrorMessage } from '../lib/utils';
 
 // Wizard step definitions
 const STEPS = [
@@ -64,7 +66,8 @@ const initialFormData = {
     thumbnail: null,
     screenshots: [],
     video_url: '',
-    documentation: '',
+    documentation_file: null,
+    documentation_url: '',
 
     // Step 4: Publish Settings
     visibility: 'public',
@@ -152,6 +155,16 @@ export default function PublishProject() {
 
         setIsLoading(true);
         try {
+            let finalDocUrl = formData.documentation_url;
+
+            // Upload documentation if file exists
+            if (formData.documentation_file) {
+                const docData = new FormData();
+                docData.append('file', formData.documentation_file);
+                const uploadRes = await projectAPI.uploadDocument(docData);
+                finalDocUrl = uploadRes.data.url;
+            }
+
             const projectData = {
                 title: formData.title,
                 description: `${formData.tagline}\n\n${formData.description}`,
@@ -162,7 +175,8 @@ export default function PublishProject() {
                 github_url: formData.github_url,
                 live_url: formData.live_url || null,
                 thumbnail_url: null, // TODO: Implement file upload
-                media_urls: []
+                media_urls: [],
+                documentation_url: finalDocUrl
             };
 
             await projectAPI.create(projectData);
@@ -170,7 +184,7 @@ export default function PublishProject() {
             navigate('/dashboard');
         } catch (error) {
             console.error('Publish error:', error);
-            toast.error('Failed to publish project');
+            toast.error(getErrorMessage(error, 'Failed to publish project'));
         } finally {
             setIsLoading(false);
         }
@@ -533,27 +547,19 @@ function Step3Media({ formData, updateField }) {
                 />
             </div>
 
-            {/* Documentation */}
+            {/* Documentation File */}
             <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                    Documentation (Markdown)
+                    Project Documentation <span className="text-destructive">*</span>
                 </label>
-                <MarkdownEditor
-                    value={formData.documentation}
-                    onChange={(value) => updateField('documentation', value)}
-                    placeholder="## Getting Started
-
-```bash
-npm install
-npm run dev
-```
-
-## Features
-
-- Feature one
-- Feature two
-"
+                <DocumentUploader
+                    value={formData.documentation_file}
+                    onChange={(file) => updateField('documentation_file', file)}
+                    onRemove={() => updateField('documentation_file', null)}
                 />
+                <p className="mt-2 text-xs text-muted-foreground">
+                    Upload a .pdf, .doc, or .docx file containing detailed project documentation.
+                </p>
             </div>
         </div>
     );

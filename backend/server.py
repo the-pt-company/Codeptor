@@ -225,6 +225,7 @@ class ProjectCreate(BaseModel):
     thumbnail_url: Optional[str] = None
     live_url: Optional[str] = None
     github_url: str  # Mandatory for contribution
+    documentation_url: Optional[str] = None
     media_urls: List[str] = []
 
 
@@ -237,6 +238,7 @@ class ProjectUpdate(BaseModel):
     thumbnail_url: Optional[str] = None
     live_url: Optional[str] = None
     github_url: Optional[str] = None
+    documentation_url: Optional[str] = None
     media_urls: Optional[List[str]] = None
 
 
@@ -257,6 +259,7 @@ class ProjectResponse(BaseModel):
     thumbnail_url: Optional[str] = None
     live_url: Optional[str] = None
     github_url: Optional[str] = None
+    documentation_url: Optional[str] = None
     media_urls: List[str] = []
     created_at: datetime
     updated_at: datetime
@@ -1255,6 +1258,37 @@ async def upload_blog_image(
     except Exception as e:
         logger.error(f"Upload failed: {e}")
         raise HTTPException(status_code=500, detail="Failed to upload image")
+
+
+@api_router.post("/projects/upload-document")
+async def upload_project_document(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user)
+):
+    """Upload a documentation file for a project."""
+    allowed_extensions = {".pdf", ".doc", ".docx"}
+    ext = os.path.splitext(file.filename)[1].lower()
+    
+    if ext not in allowed_extensions:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Invalid file type. Allowed: {', '.join(allowed_extensions)}"
+        )
+
+    # Generate unique filename
+    filename = f"doc_{uuid.uuid4()}{ext}"
+    file_path = UPLOAD_DIR / filename
+
+    try:
+        with open(file_path, "wb") as f:
+            content = await file.read()
+            f.write(content)
+        
+        file_url = f"/uploads/{filename}"
+        return {"url": file_url, "filename": file.filename}
+    except Exception as e:
+        logger.error(f"Document upload failed: {e}")
+        raise HTTPException(status_code=500, detail="Failed to upload document")
 
 
 @api_router.post("/blogs/{blog_id}/publish", response_model=BlogResponse)

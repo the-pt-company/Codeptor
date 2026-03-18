@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { Header } from '../layout/Header';
 import { Eye, EyeOff } from 'lucide-react';
 import { GoogleAuthButton } from './GoogleAuthButton';
+import { getErrorMessage } from '../../lib/utils';
 
 export const RegisterForm = () => {
     const [formData, setFormData] = useState({
@@ -31,7 +32,7 @@ export const RegisterForm = () => {
             toast.success('Account created successfully!');
             navigate('/dashboard');
         } catch (error) {
-            toast.error(error.response?.data?.detail || 'Registration failed');
+            toast.error(getErrorMessage(error, 'Registration failed'));
         } finally {
             setLoading(false);
         }

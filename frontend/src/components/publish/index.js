@@ -7,3 +7,4 @@ export { TagInput } from './TagInput';
 export { MediaUploader, VideoInput } from './MediaUploader';
 export { MarkdownEditor } from './MarkdownEditor';
 export { VersionEntry, VersionEntryForm } from './VersionEntry';
+export { DocumentUploader } from './DocumentUploader';
