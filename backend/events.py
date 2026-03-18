@@ -14,7 +14,7 @@ class EventBus:
 
     def unsubscribe(self, queue: asyncio.Queue):
         self._subscribers.discard(queue)
-
+        
     async def publish(self, event: dict):
         for queue in self._subscribers:
             await queue.put(event)

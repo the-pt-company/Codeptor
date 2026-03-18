@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { toast } from 'sonner';
 import { Header } from '../layout/Header';
 import { Eye, EyeOff } from 'lucide-react';
+import { GoogleAuthButton } from './GoogleAuthButton';
 
 export const RegisterForm = () => {
     const [formData, setFormData] = useState({
@@ -135,6 +136,8 @@ export const RegisterForm = () => {
                         >
                             {loading ? 'Creating account...' : 'Create Account'}
                         </button>
+
+                        <GoogleAuthButton />
 
                         <p className="text-center text-sm text-muted-foreground">
                             Already have an account?{' '}

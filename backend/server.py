@@ -25,6 +25,8 @@ from dotenv import load_dotenv
 from pydantic import BaseModel, Field, EmailStr, ConfigDict
 from passlib.context import CryptContext
 from jose import JWTError, jwt
+from google.oauth2 import id_token as google_id_token
+from google.auth.transport import requests as google_requests
 
 from database import db, client
 
@@ -49,6 +51,7 @@ logger = logging.getLogger(__name__)
 # Security
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 SECRET_KEY = os.environ.get("SECRET_KEY", "change-me-in-production")
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
 
@@ -163,6 +166,10 @@ class UserRegister(BaseModel):
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+
+
+class GoogleAuthRequest(BaseModel):
+    credential: str
 
 
 class UserResponse(BaseModel):
@@ -694,6 +701,84 @@ async def reset_password(data: ResetPassword):
     await db.users.update_one({"email": email}, {"$set": {"password": hashed_password}})
 
     return {"message": "Password reset successfully"}
+
+
+@api_router.post("/auth/google", response_model=Token)
+async def google_auth(data: GoogleAuthRequest):
+    """Authenticate via Google OAuth 2.0 ID token."""
+    try:
+        # Verify the Google ID token
+        idinfo = google_id_token.verify_oauth2_token(
+            data.credential,
+            google_requests.Request(),
+            GOOGLE_CLIENT_ID,
+        )
+
+        email = idinfo.get("email")
+        full_name = idinfo.get("name", "")
+        avatar_url = idinfo.get("picture")
+
+        if not email:
+            raise HTTPException(status_code=400, detail="Google token missing email")
+
+        # Check if user exists
+        user = await db.users.find_one({"email": email}, {"_id": 0})
+
+        if user:
+            # Existing user → login
+            logger.info(f"Google login for existing user: {email}")
+            access_token = create_access_token(data={"sub": email})
+            return Token(
+                access_token=access_token,
+                token_type="bearer",
+                user=_user_response(user),
+            )
+
+        # New user → register
+        logger.info(f"Google signup for new user: {email}")
+
+        # Generate a unique username from the email prefix
+        base_username = re.sub(r"[^a-zA-Z0-9]", "", email.split("@")[0]).lower()
+        if not base_username:
+            base_username = "user"
+        username = base_username
+        # If taken, append a random suffix
+        while await db.users.find_one({"username": username}):
+            username = f"{base_username}{str(uuid.uuid4())[:6]}"
+
+        user_dict = {
+            "email": email,
+            "password": None,  # No password for Google-auth users
+            "full_name": full_name or username,
+            "username": username,
+            "bio": None,
+            "avatar_url": avatar_url,
+            "github_url": None,
+            "linkedin_url": None,
+            "website_url": None,
+            "location": None,
+            "skills": [],
+            "auth_provider": "google",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+        await db.users.insert_one(user_dict)
+
+        access_token = create_access_token(data={"sub": email})
+        return Token(
+            access_token=access_token,
+            token_type="bearer",
+            user=_user_response(user_dict),
+        )
+
+    except ValueError as e:
+        logger.error(f"Google token verification failed: {e}")
+        raise HTTPException(status_code=401, detail="Invalid Google token")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Google auth error: {e}")
+        raise HTTPException(status_code=500, detail="Google authentication failed")
 
 
 # ---------------------------------------------------------------------------

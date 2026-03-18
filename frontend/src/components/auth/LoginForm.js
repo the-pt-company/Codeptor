@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { toast } from 'sonner';
 import { Header } from '../layout/Header';
 import { Eye, EyeOff } from 'lucide-react';
+import { GoogleAuthButton } from './GoogleAuthButton';
 
 export const LoginForm = () => {
     const [email, setEmail] = useState('');
@@ -102,6 +103,8 @@ export const LoginForm = () => {
                         >
                             {loading ? 'Signing in...' : 'Sign In'}
                         </button>
+
+                        <GoogleAuthButton />
 
                         <p className="text-center text-sm text-muted-foreground">
                             Don't have an account?{' '}
