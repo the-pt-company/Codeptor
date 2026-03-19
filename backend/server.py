@@ -144,7 +144,7 @@ async def send_reset_email(email: str, token: str):
     reset_link = f"{FRONTEND_URL}/reset-password?token={token}"
     
     if not all([SMTP_HOST, SMTP_USER, SMTP_PASS]):
-        logger.error(f"❌ SMTP not configured! Password reset email NOT sent to {email}")
+        logger.error(f"SMTP not configured! Password reset email NOT sent to {email}")
         logger.error(f"   Configure SMTP_HOST, SMTP_USER, SMTP_PASS in .env")
         logger.error(f"   Reset link that would be sent: {reset_link}")
         return False
