@@ -36,9 +36,9 @@ from database import db, client
 from starlette.responses import StreamingResponse
 from events import event_bus
 import json
-import aiosmtplib # type: ignore
+import aiosmtplib
 from email.message import EmailMessage
-from jinja2 import Template # type: ignore
+from jinja2 import Template
 
 # ---------------------------------------------------------------------------
 # Configuration
