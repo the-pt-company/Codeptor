@@ -27,14 +27,14 @@ from pydantic import BaseModel, Field, EmailStr, ConfigDict
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 from google.oauth2 import id_token as google_id_token
-from google.auth.transport import requests as google_requests # type: ignore
-import requests # type: ignore
+from google.auth.transport import requests as google_requests
+import requests
 
-from database import db, client  # type: ignore
+from database import db, client 
 
 
-from starlette.responses import StreamingResponse # type: ignore
-from events import event_bus # type: ignore
+from starlette.responses import StreamingResponse
+from events import event_bus
 import json
 import aiosmtplib # type: ignore
 from email.message import EmailMessage
