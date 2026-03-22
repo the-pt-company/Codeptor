@@ -22,8 +22,8 @@ from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, File, Up
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
-from dotenv import load_dotenv # type: ignore
-from pydantic import BaseModel, Field, EmailStr, ConfigDict # type: ignore
+from dotenv import load_dotenv 
+from pydantic import BaseModel, Field, EmailStr, ConfigDict 
 from passlib.context import CryptContext # type: ignore
 from jose import JWTError, jwt # type: ignore
 from google.oauth2 import id_token as google_id_token # type: ignore
