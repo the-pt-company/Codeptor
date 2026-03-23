@@ -24,9 +24,9 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv 
 from pydantic import BaseModel, Field, EmailStr, ConfigDict 
-from passlib.context import CryptContext # type: ignore
-from jose import JWTError, jwt # type: ignore
-from google.oauth2 import id_token as google_id_token # type: ignore
+from passlib.context import CryptContext
+from jose import JWTError, jwt
+from google.oauth2 import id_token as google_id_token
 from google.auth.transport import requests as google_requests # type: ignore
 import requests # type: ignore
 
