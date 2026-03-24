@@ -21,7 +21,7 @@ from typing import List, Optional, Any, Dict
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, File, UploadFile, Query
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.staticfiles import StaticFiles
-from starlette.middleware.cors import CORSMiddleware # type: ignore
+from starlette.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv # type: ignore
 from pydantic import BaseModel, Field, EmailStr, ConfigDict # type: ignore
 from passlib.context import CryptContext # type: ignore
