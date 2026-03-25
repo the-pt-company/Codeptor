@@ -18,9 +18,9 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timezone, timedelta
 from typing import List, Optional, Any, Dict
 
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, File, UploadFile, Query # type: ignore
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials # type: ignore
-from fastapi.staticfiles import StaticFiles # type: ignore
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, File, UploadFile, Query
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware # type: ignore
 from dotenv import load_dotenv # type: ignore
 from pydantic import BaseModel, Field, EmailStr, ConfigDict # type: ignore
