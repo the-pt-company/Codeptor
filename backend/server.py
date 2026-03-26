@@ -2,7 +2,7 @@ import bcrypt
 import logging
 import asyncio
 
-# ------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # Compatibility Patches (Applied first!)
 # ---------------------------------------------------------------------------
 # Fix for passlib/bcrypt incompatibility in newer versions (4.1+)
