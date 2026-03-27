@@ -1,4 +1,4 @@
-import bcrypt # type: ignore
+import bcrypt # type
 import logging
 import asyncio
 
