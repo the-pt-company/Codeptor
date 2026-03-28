@@ -790,7 +790,6 @@ async def forgot_password(request: ForgotPasswordRequest):
             }
         },
     )
-
     asyncio.create_task(send_reset_email(request.email, reset_token))
 
     return {"message": "If an account exists with this email, a reset link has been sent."}
