@@ -1,4 +1,4 @@
-import bcrypt # type
+import bcrypt
 import logging
 import asyncio
 
