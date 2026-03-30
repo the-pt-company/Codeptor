@@ -1,5 +1,6 @@
 import bcrypt # type: ignore
 import logging
+import asyncio
 
 # ---------------------------------------------------------------------------
 # Compatibility Patches (Applied first!)
@@ -176,15 +177,17 @@ The KudosD Team
         # Any other port → plain (use_tls=False, start_tls=False)
         _use_tls = SMTP_PORT == 465
         _start_tls = SMTP_PORT == 587
-        await aiosmtplib.send(
-            msg,
-            hostname=SMTP_HOST,
-            port=SMTP_PORT,
-            username=SMTP_USER,
-            password=SMTP_PASS,
-            use_tls=_use_tls,
-            start_tls=_start_tls,
-            timeout=30,
+        await asyncio.wait_for(
+                aiosmtplib.send(
+                msg,
+                hostname=SMTP_HOST,
+                port=SMTP_PORT,
+                username=SMTP_USER,
+                password=SMTP_PASS,
+                use_tls=_use_tls,
+                start_tls=_start_tls,
+            ),
+            timeout=10
         )
         logger.info(f"✅ Password reset email sent to {email}")
         return True
@@ -788,17 +791,7 @@ async def forgot_password(request: ForgotPasswordRequest):
         },
     )
 
-    email_sent = await send_reset_email(request.email, reset_token)
-    if not email_sent:
-        # Clean up the orphaned token so it can't be replayed later
-        await db.users.update_one(
-            {"email": request.email},
-            {"$unset": {"reset_token_id": "", "reset_token_expires_at": ""}},
-        )
-        raise HTTPException(
-            status_code=502,
-            detail="We couldn't send the reset email right now. Please try again later.",
-        )
+    asyncio.create_task(send_reset_email(request.email, reset_token))
 
     return {"message": "If an account exists with this email, a reset link has been sent."}
 
