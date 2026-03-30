@@ -407,7 +407,6 @@ export default function Home() {
                   <Plus style={{ width: '14px', height: '14px' }} />
                   <span>Publish Project</span>
                 </HoverBtn>
-                <NavLinkItem to={`/profile/${user?.username}`}>My Profile</NavLinkItem>
                 <NavLinkItem to="/dashboard">My Projects</NavLinkItem>
                 <NavLinkItem to="/dashboard/blogs">My Blogs</NavLinkItem>
                 <NavLinkItem to="/explore">Explore</NavLinkItem>
