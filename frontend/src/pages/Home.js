@@ -441,20 +441,10 @@ export default function Home() {
             paddingRight: isNarrow ? '0' : '24px',
           }}>
 
-            {/* Social proof badge */}
-            <div style={styles.ratingBadge}>
-              <div style={styles.ratingStars}>
-                {[...Array(5)].map((_, i) => (
-                  <span key={i} style={styles.ratingStar}>★</span>
-                ))}
-              </div>
-              <span style={styles.ratingText}>Rated 4.9/5 by 2700+ customers</span>
-            </div>
-
             {/* Headline */}
             <h1 style={styles.headline}>
               {isAuthenticated
-                ? <>Welcome back,<br />{user?.full_name?.split(' ')[0] || 'Developer'} 👋</>
+                ? <>Welcome to developers world,<br />{user?.full_name?.split(' ')[0] || 'Developer'} 👋</>
                 : <>Work smarter,<br />achieve faster</>
               }
             </h1>
@@ -500,17 +490,7 @@ export default function Home() {
           )}
         </div>
 
-        {/* ── Trusted logos strip ── */}
-        <div style={styles.trustedSection}>
-          <p style={styles.trustedLabel}>Trusted by Top-tier product companies</p>
-          <div style={styles.trustedLogos}>
-            <LogoVercel />
-            <LogoNotion />
-            <LogoLinear />
-            <LogoFigma />
-            <LogoStripe />
-          </div>
-        </div>
+
       </div>
 
       {/* ─────────────────────────────────────────────────────────────────── */}
