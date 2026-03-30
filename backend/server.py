@@ -129,36 +129,38 @@ def parse_datetime(value) -> datetime:
 
 
 async def send_reset_email(email: str, token: str):
-    """Send a password reset email to the user."""
+    """Send a password reset email to the user. Returns success status."""
     reset_link = f"{FRONTEND_URL}/reset-password/{token}"
     
     if not all([SMTP_HOST, SMTP_USER, SMTP_PASS]):
-        logger.warning(f"SMTP not configured. PROJECT_LINK: {reset_link}")
-        return
+        logger.error(f"❌ SMTP not configured! Password reset email NOT sent to {email}")
+        logger.error(f"   Configure SMTP_HOST, SMTP_USER, SMTP_PASS in .env")
+        logger.error(f"   Reset link that would be sent: {reset_link}")
+        return False
 
     msg = EmailMessage()
     msg["Subject"] = "Reset Your KudosD Password"
     msg["From"] = SMTP_FROM
     msg["To"] = email
     
-    content = f"""
-    Hello,
-    
-    You requested a password reset for your KudosD account. 
-    Please click the link below to set a new password:
-    
-    {reset_link}
-    
-    This link will expire in 15 minutes.
-    
-    If you did not request this, please ignore this email.
-    
-    Best,
-    The KudosD Team
-    """
+    content = f"""Hello,
+
+You requested a password reset for your KudosD account. 
+Please click the link below to set a new password:
+
+{reset_link}
+
+This link will expire in 15 minutes.
+
+If you did not request this, please ignore this email.
+
+Best,
+The KudosD Team
+"""
     msg.set_content(content)
     
     try:
+        logger.info(f"Attempting to send password reset email to {email}...")
         await aiosmtplib.send(
             msg,
             hostname=SMTP_HOST,
@@ -168,9 +170,13 @@ async def send_reset_email(email: str, token: str):
             use_tls=(SMTP_PORT == 465),
             start_tls=(SMTP_PORT == 587),
         )
-        logger.info(f"Password reset email sent to {email}")
+        logger.info(f"✅ Password reset email sent to {email}")
+        return True
     except Exception as e:
-        logger.error(f"Failed to send reset email to {email}: {e}")
+        logger.error(f"❌ Failed to send reset email to {email}")
+        logger.error(f"   Error: {str(e)}")
+        logger.error(f"   Reset link: {reset_link}")
+        return False
 
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
@@ -515,6 +521,13 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error("Failed to connect to MongoDB: %s", e)
 
+    # Startup — verify SMTP configuration
+    if not all([SMTP_HOST, SMTP_USER, SMTP_PASS]):
+        logger.warning("⚠️  SMTP NOT CONFIGURED - Password reset emails WILL NOT be sent")
+        logger.warning("   Set SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM in .env")
+    else:
+        logger.info(f"✅ SMTP configured: {SMTP_USER} @ {SMTP_HOST}:{SMTP_PORT}")
+
     # Create indexes for performance
     try:
         await db.users.create_index("email", unique=True)
@@ -718,8 +731,11 @@ async def update_me(user_update: UserUpdate, current_user: dict = Depends(get_cu
 
 @api_router.post("/auth/forgot-password")
 async def forgot_password(request: ForgotPasswordRequest):
+    logger.info(f"Password reset requested for: {request.email}")
+    
     user = await db.users.find_one({"email": request.email})
     if not user:
+        logger.warning(f"Password reset requested for non-existent email: {request.email}")
         return {"message": "If an account exists with this email, a reset link has been sent."}
 
     token_data = {"sub": request.email, "type": "reset"}
@@ -727,8 +743,8 @@ async def forgot_password(request: ForgotPasswordRequest):
     token_data.update({"exp": expire})
     reset_token = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
     
-    # Send email in background
-    await send_reset_email(request.email, reset_token)
+    # Send email in background (non-blocking) - returns immediately
+    asyncio.create_task(send_reset_email(request.email, reset_token))
     
     return {"message": "If an account exists with this email, a reset link has been sent."}
 
