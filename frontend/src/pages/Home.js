@@ -407,6 +407,7 @@ export default function Home() {
                   <Plus style={{ width: '14px', height: '14px' }} />
                   <span>Publish Project</span>
                 </HoverBtn>
+                <NavLinkItem to={`/profile/${user?.username}`}>My Profile</NavLinkItem>
                 <NavLinkItem to="/dashboard">My Projects</NavLinkItem>
                 <NavLinkItem to="/dashboard/blogs">My Blogs</NavLinkItem>
                 <NavLinkItem to="/explore">Explore</NavLinkItem>
@@ -464,11 +465,22 @@ export default function Home() {
               your goals with our intuitive task management tool.
             </p>
 
-            {/* CTA */}
-            <HoverBtn to={ctaDest} baseStyle={styles.ctaBtn}>
-              {ctaLabel}
-              <span style={styles.ctaArrow}>→</span>
-            </HoverBtn>
+            {/* CTA Group */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center' }}>
+              <HoverBtn to={ctaDest} baseStyle={styles.ctaBtn}>
+                {ctaLabel}
+                <span style={styles.ctaArrow}>→</span>
+              </HoverBtn>
+              
+              {isAuthenticated && (
+                <Link 
+                  to={`/profile/${user?.username}`}
+                  className="px-8 py-3.5 rounded-2xl border border-border bg-background/50 backdrop-blur-sm shadow-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-all"
+                >
+                  View Profile
+                </Link>
+              )}
+            </div>
           </div>
 
           {/* Right column — Orb video */}

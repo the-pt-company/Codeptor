@@ -162,6 +162,7 @@ export const Header = () => {
                                 <span className="sm:hidden">Publish</span>
                             </Link>
 
+                            <NavLink to={`/profile/${user?.username}`}>My Profile</NavLink>
                             <NavLink to="/dashboard">
                                 <span className="hidden sm:inline">My Projects</span>
                                 <span className="sm:hidden">Projects</span>

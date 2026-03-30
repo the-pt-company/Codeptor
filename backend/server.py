@@ -35,6 +35,9 @@ from database import db, client  # type: ignore
 from starlette.responses import StreamingResponse # type: ignore
 from events import event_bus # type: ignore
 import json
+import aiosmtplib # type: ignore
+from email.message import EmailMessage
+from jinja2 import Template # type: ignore
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -57,6 +60,13 @@ if not SECRET_KEY:
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
+
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
+SMTP_HOST = os.getenv("SMTP_HOST")
+SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+SMTP_USER = os.getenv("SMTP_USER")
+SMTP_PASS = os.getenv("SMTP_PASS")
+SMTP_FROM = os.getenv("SMTP_FROM", "noreply@kudosd.com")
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024  # 10 MB
 
 security = HTTPBearer()
@@ -117,6 +127,50 @@ def parse_datetime(value) -> datetime:
         return datetime.fromisoformat(value)
     return value
 
+
+async def send_reset_email(email: str, token: str):
+    """Send a password reset email to the user."""
+    reset_link = f"{FRONTEND_URL}/reset-password/{token}"
+    
+    if not all([SMTP_HOST, SMTP_USER, SMTP_PASS]):
+        logger.warning(f"SMTP not configured. PROJECT_LINK: {reset_link}")
+        return
+
+    msg = EmailMessage()
+    msg["Subject"] = "Reset Your KudosD Password"
+    msg["From"] = SMTP_FROM
+    msg["To"] = email
+    
+    content = f"""
+    Hello,
+    
+    You requested a password reset for your KudosD account. 
+    Please click the link below to set a new password:
+    
+    {reset_link}
+    
+    This link will expire in 15 minutes.
+    
+    If you did not request this, please ignore this email.
+    
+    Best,
+    The KudosD Team
+    """
+    msg.set_content(content)
+    
+    try:
+        await aiosmtplib.send(
+            msg,
+            hostname=SMTP_HOST,
+            port=SMTP_PORT,
+            username=SMTP_USER,
+            password=SMTP_PASS,
+            use_tls=(SMTP_PORT == 465),
+            start_tls=(SMTP_PORT == 587),
+        )
+        logger.info(f"Password reset email sent to {email}")
+    except Exception as e:
+        logger.error(f"Failed to send reset email to {email}: {e}")
 
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
@@ -657,10 +711,10 @@ async def forgot_password(request: ForgotPasswordRequest):
     expire = datetime.now(timezone.utc) + timedelta(minutes=15)
     token_data.update({"exp": expire})
     reset_token = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
-
-    reset_link = f"http://localhost:3000/reset-password/{reset_token}"
-    logger.info("PASSWORD RESET LINK for %s: %s", request.email, reset_link)
-
+    
+    # Send email in background
+    await send_reset_email(request.email, reset_token)
+    
     return {"message": "If an account exists with this email, a reset link has been sent."}
 
 
