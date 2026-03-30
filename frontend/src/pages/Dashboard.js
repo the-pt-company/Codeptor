@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { projectAPI } from '../lib/api';
 import { toast } from 'sonner';
@@ -303,87 +303,92 @@ function GridView({ projects, formatRelativeTime, getStatusBadge, activeMenu, se
             {projects.map((project) => {
                 const status = getStatusBadge(project.status);
                 return (
-                    <div
+                    <Link
                         key={project.project_id}
-                        className="rounded-lg border border-border bg-card p-5 hover:border-accent/50 hover:shadow-lg transition-all duration-300 group relative"
+                        to={`/project/${project.project_id}`}
+                        className="rounded-lg border border-border bg-card p-5 hover:border-accent/50 hover:shadow-lg transition-all duration-300 group relative no-underline"
                     >
-                        {/* Header */}
-                        <div className="flex justify-between items-start mb-3">
-                            <h3 className="font-heading font-semibold text-lg tracking-tight text-foreground group-hover:text-accent transition-colors line-clamp-1">
-                                {project.title}
-                            </h3>
+                        <div
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {/* Header */}
+                            <div className="flex justify-between items-start mb-3">
+                                <h3 className="font-heading font-semibold text-lg tracking-tight text-foreground group-hover:text-accent transition-colors line-clamp-1">
+                                    {project.title}
+                                </h3>
 
-                            {/* Actions Menu */}
-                            <div className="relative">
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setActiveMenu(activeMenu === project.project_id ? null : project.project_id);
-                                    }}
-                                    className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors opacity-0 group-hover:opacity-100"
-                                >
-                                    <MoreVertical className="w-4 h-4" />
-                                </button>
-
-                                {activeMenu === project.project_id && (
-                                    <QuickActionsMenu
-                                        project={project}
-                                        onEdit={onEdit}
-                                        onDelete={onDelete}
-                                        onDuplicate={onDuplicate}
-                                        onArchive={onArchive}
-                                        onPin={onPin}
-                                    />
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Description */}
-                        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                            {project.description}
-                        </p>
-
-                        {/* Tech Stack */}
-                        <div className="flex flex-wrap gap-1.5 mb-4">
-                            {project.tech_stack?.slice(0, 3).map((tech) => (
-                                <span
-                                    key={tech}
-                                    className="text-xs font-mono bg-muted px-2 py-0.5 rounded text-foreground"
-                                >
-                                    {tech}
-                                </span>
-                            ))}
-                            {project.tech_stack?.length > 3 && (
-                                <span className="text-xs font-mono text-muted-foreground">
-                                    +{project.tech_stack.length - 3}
-                                </span>
-                            )}
-                        </div>
-
-                        {/* Footer */}
-                        <div className="flex items-center justify-between pt-3 border-t border-border">
-                            <span className={`text-xs font-medium px-2 py-0.5 rounded ${status.style}`}>
-                                {status.label}
-                            </span>
-                            <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                                <span className="flex items-center gap-1">
-                                    <Clock className="w-3 h-3" />
-                                    {formatRelativeTime(project.updated_at)}
-                                </span>
-                                {project.live_url && (
-                                    <a
-                                        href={project.live_url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center gap-1 hover:text-accent transition-colors"
-                                        onClick={(e) => e.stopPropagation()}
+                                {/* Actions Menu */}
+                                <div className="relative">
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setActiveMenu(activeMenu === project.project_id ? null : project.project_id);
+                                        }}
+                                        className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors opacity-0 group-hover:opacity-100"
                                     >
-                                        <ExternalLink className="w-3 h-3" />
-                                    </a>
+                                        <MoreVertical className="w-4 h-4" />
+                                    </button>
+
+                                    {activeMenu === project.project_id && (
+                                        <QuickActionsMenu
+                                            project={project}
+                                            onEdit={onEdit}
+                                            onDelete={onDelete}
+                                            onDuplicate={onDuplicate}
+                                            onArchive={onArchive}
+                                            onPin={onPin}
+                                        />
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Description */}
+                            <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                                {project.description}
+                            </p>
+
+                            {/* Tech Stack */}
+                            <div className="flex flex-wrap gap-1.5 mb-4">
+                                {project.tech_stack?.slice(0, 3).map((tech) => (
+                                    <span
+                                        key={tech}
+                                        className="text-xs font-mono bg-muted px-2 py-0.5 rounded text-foreground"
+                                    >
+                                        {tech}
+                                    </span>
+                                ))}
+                                {project.tech_stack?.length > 3 && (
+                                    <span className="text-xs font-mono text-muted-foreground">
+                                        +{project.tech_stack.length - 3}
+                                    </span>
                                 )}
                             </div>
+
+                            {/* Footer */}
+                            <div className="flex items-center justify-between pt-3 border-t border-border">
+                                <span className={`text-xs font-medium px-2 py-0.5 rounded ${status.style}`}>
+                                    {status.label}
+                                </span>
+                                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                    <span className="flex items-center gap-1">
+                                        <Clock className="w-3 h-3" />
+                                        {formatRelativeTime(project.updated_at)}
+                                    </span>
+                                    {project.live_url && (
+                                        <a
+                                            href={project.live_url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex items-center gap-1 hover:text-accent transition-colors"
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            <ExternalLink className="w-3 h-3" />
+                                        </a>
+                                    )}
+                                </div>
+                            </div>
                         </div>
-                    </div>
+                    </Link>
                 );
             })}
         </div>
@@ -407,10 +412,17 @@ function ListView({ projects, formatRelativeTime, getStatusBadge, activeMenu, se
             {projects.map((project, index) => {
                 const status = getStatusBadge(project.status);
                 return (
-                    <div
+                    <Link
                         key={project.project_id}
-                        className={`grid grid-cols-1 md:grid-cols-12 gap-4 px-4 py-4 items-center hover:bg-muted/30 transition-colors group ${index !== projects.length - 1 ? 'border-b border-border' : ''
+                        to={`/project/${project.project_id}`}
+                        className={`grid grid-cols-1 md:grid-cols-12 gap-4 px-4 py-4 items-center hover:bg-muted/30 transition-colors group no-underline text-inherit ${index !== projects.length - 1 ? 'border-b border-border' : ''
                             }`}
+                        onClick={(e) => {
+                            // Only prevent navigation if clicking on interactive elements
+                            if (e.target.closest('button') || e.target.closest('a')) {
+                                e.preventDefault();
+                            }
+                        }}
                     >
                         {/* Project Info */}
                         <div className="md:col-span-5">
@@ -452,7 +464,7 @@ function ListView({ projects, formatRelativeTime, getStatusBadge, activeMenu, se
                         </div>
 
                         {/* Actions */}
-                        <div className="md:col-span-1 relative flex justify-end">
+                        <div className="md:col-span-1 relative flex justify-end" onClick={(e) => e.stopPropagation()}>
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
@@ -474,7 +486,7 @@ function ListView({ projects, formatRelativeTime, getStatusBadge, activeMenu, se
                                 />
                             )}
                         </div>
-                    </div>
+                    </Link>
                 );
             })}
         </div>
