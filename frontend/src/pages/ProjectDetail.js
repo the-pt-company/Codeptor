@@ -19,7 +19,7 @@ export default function ProjectDetail() {
         const fetchProject = async () => {
             setLoading(true);
             try {
-                const response = await projectAPI.get(projectId);
+                const response = await projectAPI.getById(projectId);
                 if (response.data) {
                     setProject(response.data);
                 } else {
