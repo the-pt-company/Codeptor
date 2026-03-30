@@ -1,8 +1,7 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { useTheme } from '../../context/ThemeContext';
-import { Moon, Sun, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { ProfileDropdown } from '../profile/ProfileDropdown';
 
 /* ── Liquid Glass Header ─────────────────────────────────────────────────── */
@@ -25,15 +24,13 @@ const navLinkBase = {
 
 function NavLink({ to, children, style }) {
     const [hovered, setHovered] = React.useState(false);
-    const { theme } = useTheme();
-    const isDark = theme === 'dark';
     return (
         <Link
             to={to}
             style={{
                 ...navLinkBase,
-                color: hovered ? (isDark ? '#fff' : '#0a0a0a') : (isDark ? 'rgba(255,255,255,0.75)' : '#374151'),
-                background: hovered ? (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)') : 'transparent',
+                color: hovered ? '#0a0a0a' : '#374151',
+                background: hovered ? 'rgba(0,0,0,0.06)' : 'transparent',
                 ...style,
             }}
             onMouseEnter={() => setHovered(true)}
@@ -71,9 +68,7 @@ function PrimaryBtn({ to, children }) {
 
 export const Header = () => {
     const { isAuthenticated, user, logout } = useAuth();
-    const { theme, toggleTheme } = useTheme();
     const navigate = useNavigate();
-    const isDark = theme === 'dark';
 
     const handleLogout = () => {
         logout();
@@ -87,16 +82,10 @@ export const Header = () => {
         width: '100%',
         backdropFilter: 'blur(40px)',
         WebkitBackdropFilter: 'blur(40px)',
-        background: isDark
-            ? 'rgba(15,23,42,0.70)'
-            : 'rgba(255,255,255,0.72)',
-        borderBottom: isDark
-            ? '1px solid rgba(255,255,255,0.08)'
-            : '1px solid rgba(0,0,0,0.08)',
-        boxShadow: isDark
-            ? 'inset 0px 1px 0px rgba(255,255,255,0.06), 0 4px 24px rgba(0,0,0,0.18)'
-            : 'inset 0px 1px 0px rgba(255,255,255,0.80), 0 4px 24px rgba(0,0,0,0.05)',
-        transition: 'background 0.3s, border-color 0.3s, box-shadow 0.3s',
+        background: 'rgba(255,255,255,0.72)',
+        borderBottom: '1px solid rgba(0,0,0,0.08)',
+        boxShadow: 'inset 0px 1px 0px rgba(255,255,255,0.80), 0 4px 24px rgba(0,0,0,0.05)',
+        transition: 'none',
     };
 
     const logoStyle = {
@@ -104,7 +93,7 @@ export const Header = () => {
         fontWeight: '800',
         fontSize: '19px',
         letterSpacing: '-0.5px',
-        color: isDark ? '#ffffff' : '#0a0a0a',
+        color: '#0a0a0a',
         textDecoration: 'none',
         display: 'flex',
         alignItems: 'center',
@@ -124,18 +113,7 @@ export const Header = () => {
     };
 
     const themeToggleStyle = {
-        width: '34px',
-        height: '34px',
-        borderRadius: '10px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)',
-        border: isDark ? '1px solid rgba(255,255,255,0.10)' : '1px solid rgba(0,0,0,0.07)',
-        color: isDark ? 'rgba(255,255,255,0.75)' : '#374151',
-        cursor: 'pointer',
-        transition: 'all 0.18s',
-        flexShrink: 0,
+        display: 'none',
     };
 
     return (
@@ -195,17 +173,8 @@ export const Header = () => {
                             <NavLink to="/explore">Explore</NavLink>
                             <NavLink to="/contribute">Contribute</NavLink>
 
-                            {/* Theme Toggle */}
-                            <button
-                                onClick={toggleTheme}
-                                style={themeToggleStyle}
-                                aria-label="Toggle theme"
-                            >
-                                {theme === 'light'
-                                    ? <Moon style={{ width: '16px', height: '16px' }} />
-                                    : <Sun style={{ width: '16px', height: '16px' }} />
-                                }
-                            </button>
+                            {/* Theme Toggle — hidden (dark mode removed) */}
+                            <button style={themeToggleStyle} aria-hidden="true" />
 
                             {/* Profile Dropdown */}
                             <ProfileDropdown user={user} onLogout={handleLogout} />
@@ -215,17 +184,8 @@ export const Header = () => {
                             <NavLink to="/explore">Explore</NavLink>
                             <NavLink to="/contribute">Contribute</NavLink>
 
-                            {/* Theme Toggle */}
-                            <button
-                                onClick={toggleTheme}
-                                style={{ ...themeToggleStyle, margin: '0 4px' }}
-                                aria-label="Toggle theme"
-                            >
-                                {theme === 'light'
-                                    ? <Moon style={{ width: '16px', height: '16px' }} />
-                                    : <Sun style={{ width: '16px', height: '16px' }} />
-                                }
-                            </button>
+                            {/* Theme Toggle — hidden (dark mode removed) */}
+                            <button style={themeToggleStyle} aria-hidden="true" />
 
                             <NavLink to="/login" style={{ marginLeft: '2px' }}>Login</NavLink>
                             <PrimaryBtn to="/register">Sign up ↗</PrimaryBtn>

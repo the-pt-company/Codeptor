@@ -3,8 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Footer } from '../components/layout/Footer';
 import { FeatureCard } from '../components/FeatureCard';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
-import { Code2, Zap, Users, PenSquare, ArrowRight, Plus, Moon, Sun } from 'lucide-react';
+import { Code2, Zap, Users, PenSquare, ArrowRight, Plus } from 'lucide-react';
 
 /* ─── Inline styles & constants ─────────────────────────────────────────── */
 

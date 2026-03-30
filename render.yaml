@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: kudosd-api
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn server:app --host 0.0.0.0 --port $PORT
+    plan: free
+    envVars:
+      - key: MONGO_URL
+        sync: false          # Set manually in Render dashboard
+      - key: DB_NAME
+        value: KudosDev
+      - key: SECRET_KEY
+        sync: false          # Set manually in Render dashboard
+      - key: GOOGLE_CLIENT_ID
+        sync: false          # Set manually in Render dashboard
+      - key: FRONTEND_URL
+        value: https://kudosd.vercel.app   # Update to your Vercel domain

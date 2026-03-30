@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
 import { Header } from '../components/layout/Header';
 import { Footer } from '../components/layout/Footer';
 import { toast } from 'sonner';
@@ -9,7 +8,6 @@ import {
     User,
     Mail,
     Lock,
-    Moon,
     Sun,
     Save,
     UserCircle,
@@ -28,7 +26,6 @@ import { blogAPI } from '../lib/api';
 
 export default function Settings() {
     const { user, updateUser } = useAuth();
-    const { theme, toggleTheme } = useTheme();
 
     const [activeTab, setActiveTab] = useState('profile');
     const [loading, setLoading] = useState(false);
@@ -459,50 +456,16 @@ export default function Settings() {
                         {activeTab === 'appearance' && (
                             <div className="space-y-6">
                                 <div>
-                                    <h3 className="text-sm font-medium text-foreground mb-4">Theme Preference</h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <button
-                                            onClick={() => theme === 'dark' && toggleTheme()}
-                                            className={`
-                                                flex flex-col gap-3 p-4 rounded-xl border-2 transition-all text-left
-                                                ${theme === 'light'
-                                                    ? 'border-primary bg-primary/5'
-                                                    : 'border-border hover:border-border/80 bg-card'}
-                                            `}
-                                        >
-                                            <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center text-orange-600">
-                                                <Sun className="w-6 h-6" />
-                                            </div>
-                                            <div>
-                                                <p className="font-medium text-foreground">Light Mode</p>
-                                                <p className="text-xs text-muted-foreground mt-1">Clean and crisp appearance</p>
-                                            </div>
-                                        </button>
-
-                                        <button
-                                            onClick={() => theme === 'light' && toggleTheme()}
-                                            className={`
-                                                flex flex-col gap-3 p-4 rounded-xl border-2 transition-all text-left
-                                                ${theme === 'dark'
-                                                    ? 'border-primary bg-primary/5'
-                                                    : 'border-border hover:border-border/80 bg-card'}
-                                            `}
-                                        >
-                                            <div className="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600">
-                                                <Moon className="w-6 h-6" />
-                                            </div>
-                                            <div>
-                                                <p className="font-medium text-foreground">Dark Mode</p>
-                                                <p className="text-xs text-muted-foreground mt-1">Easy on the eyes in low light</p>
-                                            </div>
-                                        </button>
+                                    <h3 className="text-sm font-medium text-foreground mb-4">Theme</h3>
+                                    <div className="flex items-center gap-4 p-4 rounded-xl border border-border bg-muted/30">
+                                        <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center text-orange-600">
+                                            <Sun className="w-6 h-6" />
+                                        </div>
+                                        <div>
+                                            <p className="font-medium text-foreground">Light Mode</p>
+                                            <p className="text-xs text-muted-foreground mt-0.5">This app uses light mode only.</p>
+                                        </div>
                                     </div>
-                                </div>
-
-                                <div className="pt-6 border-t border-border">
-                                    <p className="text-sm text-muted-foreground text-center">
-                                        Your theme preference is saved automatically to your browser.
-                                    </p>
                                 </div>
                             </div>
                         )}

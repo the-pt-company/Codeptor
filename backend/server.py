@@ -1,4 +1,4 @@
-import bcrypt
+import bcrypt # type: ignore
 import logging
 
 # ---------------------------------------------------------------------------
@@ -6,7 +6,7 @@ import logging
 # ---------------------------------------------------------------------------
 # Fix for passlib/bcrypt incompatibility in newer versions (4.1+)
 if not hasattr(bcrypt, "__about__"):
-    bcrypt.__about__ = type("About", (object,), {"__version__": bcrypt.__version__})
+    bcrypt.__about__ = type("About", (object,), {"__version__": bcrypt.__version__})  # type: ignore
 
 import asyncio
 import re
@@ -15,25 +15,25 @@ import os
 from pathlib import Path
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone, timedelta
-from typing import List, Optional
+from typing import List, Optional, Any, Dict
 
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, File, UploadFile, Query
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from fastapi.staticfiles import StaticFiles
-from starlette.middleware.cors import CORSMiddleware
-from dotenv import load_dotenv
-from pydantic import BaseModel, Field, EmailStr, ConfigDict
-from passlib.context import CryptContext
-from jose import JWTError, jwt
-from google.oauth2 import id_token as google_id_token
-from google.auth.transport import requests as google_requests
-import requests
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, File, UploadFile, Query # type: ignore
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials # type: ignore
+from fastapi.staticfiles import StaticFiles # type: ignore
+from starlette.middleware.cors import CORSMiddleware # type: ignore
+from dotenv import load_dotenv # type: ignore
+from pydantic import BaseModel, Field, EmailStr, ConfigDict # type: ignore
+from passlib.context import CryptContext # type: ignore
+from jose import JWTError, jwt # type: ignore
+from google.oauth2 import id_token as google_id_token # type: ignore
+from google.auth.transport import requests as google_requests # type: ignore
+import requests # type: ignore
 
 from database import db, client
 
 
-from starlette.responses import StreamingResponse
-from events import event_bus
+from starlette.responses import StreamingResponse # type: ignore
+from events import event_bus # type: ignore
 import json
 
 # ---------------------------------------------------------------------------
@@ -51,10 +51,13 @@ logger = logging.getLogger(__name__)
 
 # Security
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-SECRET_KEY = os.environ.get("SECRET_KEY", "change-me-in-production")
+SECRET_KEY = os.environ.get("SECRET_KEY")
+if not SECRET_KEY:
+    raise RuntimeError("SECRET_KEY environment variable is not set. Refusing to start.")
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
+MAX_UPLOAD_BYTES = 10 * 1024 * 1024  # 10 MB
 
 security = HTTPBearer()
 
@@ -130,7 +133,7 @@ async def get_current_user(
     user = await db.users.find_one({"email": email}, {"_id": 0})
     if user is None:
         raise HTTPException(status_code=401, detail="User not found")
-    return user
+    return user  # type: ignore
 
 
 async def get_optional_user(
@@ -371,7 +374,7 @@ def generate_slug(title: str) -> str:
     base = re.sub(r"[^\w\s-]", "", title.lower().strip())
     base = re.sub(r"[\s_]+", "-", base)
     base = re.sub(r"-+", "-", base).strip("-")
-    suffix = str(uuid.uuid4())[:8]
+    suffix = str(uuid.uuid4())[:8]  # type: ignore
     return f"{base}-{suffix}" if base else suffix
 
 
@@ -384,7 +387,7 @@ def calculate_reading_time(text: str) -> int:
 
 def _user_response(user: dict) -> UserResponse:
     """Build a UserResponse from a raw MongoDB document."""
-    return UserResponse(
+    return UserResponse(  # type: ignore
         email=user["email"],
         full_name=user["full_name"],
         username=user["username"],
@@ -402,7 +405,7 @@ def _user_response(user: dict) -> UserResponse:
 async def _developer_response(user: dict) -> DeveloperResponse:
     """Build a DeveloperResponse from a raw MongoDB document including project count."""
     count = await db.projects.count_documents({"user_username": user["username"]})
-    return DeveloperResponse(
+    return DeveloperResponse(  # type: ignore
         full_name=user["full_name"],
         username=user["username"],
         bio=user.get("bio"),
@@ -417,13 +420,13 @@ async def _developer_response(user: dict) -> DeveloperResponse:
     )
 
 
-def _project_response(project: dict) -> ProjectResponse:
+def _project_response(project: dict) -> ProjectResponse:  # type: ignore
     """Build a ProjectResponse from a raw MongoDB document."""
     p = project.copy()
     
     # Ensure ID is a string
     if "_id" in p:
-        del p["_id"]
+        del p["_id"]  # type: ignore
         
     # Handle dates safely
     p["created_at"] = parse_datetime(p.get("created_at", datetime.now(timezone.utc).isoformat()))
@@ -467,31 +470,26 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error("Failed to connect to MongoDB: %s", e)
 
-    # Ensure the default admin user exists
+    # Create indexes for performance
     try:
-        admin_email = "admin@gmail.com"
-        seed_user_data = {
-            "email": admin_email,
-            "password": get_password_hash("admin"),
-            "full_name": "Admin User",
-            "username": "adminuser",
-            "bio": "Default admin account for KudosDev",
-            "avatar_url": None,
-            "github_url": None,
-            "linkedin_url": None,
-            "website_url": None,
-            "location": None,
-            "skills": ["React", "Python", "FastAPI"],
-            "created_at": datetime.now(timezone.utc).isoformat(),
-        }
-        await db.users.update_one(
-            {"email": admin_email},
-            {"$setOnInsert": seed_user_data},
-            upsert=True,
-        )
-        logger.info("Admin user ensured (only seeded if not already present)")
+        await db.users.create_index("email", unique=True)
+        await db.users.create_index("username", unique=True)
+        await db.projects.create_index("user_email")
+        await db.projects.create_index("user_username")
+        await db.projects.create_index([("created_at", -1)])
+        await db.projects.create_index("project_id", unique=True)
+        await db.blogs.create_index("slug", unique=True)
+        await db.blogs.create_index("blog_id", unique=True)
+        await db.blogs.create_index("author_email")
+        await db.blogs.create_index([("published_at", -1)])
+        await db.blogs.create_index("tags")
+        await db.follows.create_index([("follower_email", 1), ("following_email", 1)], unique=True)
+        await db.reactions.create_index([("blog_id", 1), ("user_email", 1), ("type", 1)], unique=True)
+        await db.bookmarks.create_index([("user_email", 1), ("blog_id", 1)], unique=True)
+        await db.comments.create_index([("blog_id", 1), ("created_at", 1)])
+        logger.info("MongoDB indexes ensured")
     except Exception as e:
-        logger.warning("Could not ensure admin user: %s", e)
+        logger.warning("Index creation warning (may already exist): %s", e)
 
     # Start Change Stream watchers as background tasks
     watcher_tasks = [
@@ -577,10 +575,11 @@ async def _watch_comments():
 
 app = FastAPI(lifespan=lifespan)
 
+_frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:3000")
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=os.environ.get("CORS_ORIGINS", "*").split(","),
+    allow_origins=[_frontend_url],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -628,7 +627,7 @@ async def register(user_data: UserRegister):
     access_token = create_access_token(data={"sub": user_data.email})
     user_response = _user_response(user_dict)
 
-    return Token(access_token=access_token, token_type="bearer", user=user_response)
+    return Token(access_token=access_token, token_type="bearer", user=user_response)  # type: ignore
 
 
 @api_router.post("/auth/login", response_model=Token)
@@ -641,14 +640,14 @@ async def login(user_data: UserLogin):
             logger.warning(f"User not found in DB: {user_data.email}")
             raise HTTPException(status_code=401, detail="Incorrect email or password")
         
-        # Verify password with detailed debug logging if it fails
+        # Verify password
         if not verify_password(user_data.password, user["password"]):
-            logger.warning(f"Invalid password for: {user_data.email}. Received: '{user_data.password}'")
+            logger.warning(f"Failed login attempt for: {user_data.email}")
             raise HTTPException(status_code=401, detail="Incorrect email or password")
 
         logger.info(f"Login successful for: {user_data.email}")
         access_token = create_access_token(data={"sub": user_data.email})
-        return Token(access_token=access_token, token_type="bearer", user=_user_response(user))
+        return Token(access_token=access_token, token_type="bearer", user=_user_response(user))  # type: ignore
     except HTTPException:
         raise
     except Exception as e:
@@ -734,7 +733,7 @@ async def google_auth(data: GoogleAuthRequest):
             # Existing user → login
             logger.info(f"Google login for existing user: {email}")
             access_token = create_access_token(data={"sub": email})
-            return Token(
+            return Token(  # type: ignore
                 access_token=access_token,
                 token_type="bearer",
                 user=_user_response(user),
@@ -750,7 +749,7 @@ async def google_auth(data: GoogleAuthRequest):
         username = base_username
         # If taken, append a random suffix
         while await db.users.find_one({"username": username}):
-            username = f"{base_username}{str(uuid.uuid4())[:6]}"
+            username = f"{base_username}{str(uuid.uuid4())[:6]}"  # type: ignore
 
         user_dict = {
             "email": email,
@@ -771,7 +770,7 @@ async def google_auth(data: GoogleAuthRequest):
         await db.users.insert_one(user_dict)
 
         access_token = create_access_token(data={"sub": email})
-        return Token(
+        return Token(  # type: ignore
             access_token=access_token,
             token_type="bearer",
             user=_user_response(user_dict),
@@ -962,7 +961,7 @@ async def get_all_projects(
     exclude_self: bool = False,
     current_user: Optional[dict] = Depends(get_optional_user)
 ):
-    query = {}
+    query: dict[str, Any] = {}
     if category:
         query["category"] = category
     if status:
@@ -970,7 +969,7 @@ async def get_all_projects(
     
     if exclude_self and current_user:
         query["user_email"] = {"$ne": current_user["email"]}
-        query["github_url"] = {"$exists": True, "$ne": None, "$ne": ""}
+        query["github_url"] = {"$exists": True, "$nin": [None, ""]}
 
     projects = await db.projects.find(query, {"_id": 0}).sort("created_at", -1).to_list(100)
     return [_project_response(p) for p in projects]
@@ -988,7 +987,7 @@ async def get_my_projects(current_user: dict = Depends(get_current_user)):
         logger.info(f"Found {len(projects)} projects for {current_user['email']}")
         
         response_data = []
-        for p in projects:
+        for p in projects:  # type: ignore
             try:
                 response_data.append(_project_response(p))
             except Exception as e:
@@ -1191,7 +1190,7 @@ async def update_blog(
     if blog["author_email"] != current_user["email"]:
         raise HTTPException(status_code=403, detail="Not authorized")
 
-    update_data = {k: v for k, v in blog_update.model_dump().items() if v is not None}
+    update_data: dict[str, Any] = {k: v for k, v in blog_update.model_dump().items() if v is not None}
     if "content_markdown" in update_data:
         update_data["word_count"] = len(update_data["content_markdown"].split())
         update_data["reading_time_minutes"] = calculate_reading_time(update_data["content_markdown"])
@@ -1233,57 +1232,65 @@ async def delete_blog(blog_id: str, current_user: dict = Depends(get_current_use
     return {"message": "Blog deleted successfully"}
 
 
+ALLOWED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
+
 @api_router.post("/blogs/upload-image")
 async def upload_blog_image(
     file: UploadFile = File(...),
     current_user: dict = Depends(get_current_user)
 ):
-    """Upload an image for a blog post."""
-    if not file.content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="File must be an image")
+    """Upload an image for a blog post (max 10 MB)."""
+    ext = os.path.splitext(file.filename or "")[1].lower()
+    if not file.content_type.startswith("image/") or ext not in ALLOWED_IMAGE_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid file. Allowed image types: {', '.join(ALLOWED_IMAGE_EXTENSIONS)}"
+        )
 
-    # Generate unique filename
-    ext = os.path.splitext(file.filename)[1]
+    # Read in chunks, enforce 10 MB limit
+    content = b""
+    async for chunk in file:
+        content += chunk
+        if len(content) > MAX_UPLOAD_BYTES:
+            raise HTTPException(status_code=413, detail="File too large. Maximum size is 10 MB.")
+
     filename = f"{uuid.uuid4()}{ext}"
     file_path = UPLOAD_DIR / filename
-
     try:
-        with open(file_path, "wb") as f:
-            content = await file.read()
-            f.write(content)
-        
-        # In a real app, you'd use a full URL. For local dev:
+        file_path.write_bytes(content)
         file_url = f"/uploads/{filename}"
         return {"url": file_url}
     except Exception as e:
-        logger.error(f"Upload failed: {e}")
+        logger.error(f"Image upload failed: {e}")
         raise HTTPException(status_code=500, detail="Failed to upload image")
 
+
+ALLOWED_DOC_EXTENSIONS = {".pdf", ".doc", ".docx"}
 
 @api_router.post("/projects/upload-document")
 async def upload_project_document(
     file: UploadFile = File(...),
     current_user: dict = Depends(get_current_user)
 ):
-    """Upload a documentation file for a project."""
-    allowed_extensions = {".pdf", ".doc", ".docx"}
-    ext = os.path.splitext(file.filename)[1].lower()
-    
-    if ext not in allowed_extensions:
+    """Upload a documentation file for a project (max 10 MB)."""
+    ext = os.path.splitext(file.filename or "")[1].lower()
+    if ext not in ALLOWED_DOC_EXTENSIONS:
         raise HTTPException(
-            status_code=400, 
-            detail=f"Invalid file type. Allowed: {', '.join(allowed_extensions)}"
+            status_code=400,
+            detail=f"Invalid file type. Allowed: {', '.join(ALLOWED_DOC_EXTENSIONS)}"
         )
 
-    # Generate unique filename
+    # Read in chunks, enforce 10 MB limit
+    content = b""
+    async for chunk in file:
+        content += chunk
+        if len(content) > MAX_UPLOAD_BYTES:
+            raise HTTPException(status_code=413, detail="File too large. Maximum size is 10 MB.")
+
     filename = f"doc_{uuid.uuid4()}{ext}"
     file_path = UPLOAD_DIR / filename
-
     try:
-        with open(file_path, "wb") as f:
-            content = await file.read()
-            f.write(content)
-        
+        file_path.write_bytes(content)
         file_url = f"/uploads/{filename}"
         return {"url": file_url, "filename": file.filename}
     except Exception as e:

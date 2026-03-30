@@ -1,8 +1,8 @@
 import os
 import logging
 from pathlib import Path
-from motor.motor_asyncio import AsyncIOMotorClient
-from dotenv import load_dotenv
+from motor.motor_asyncio import AsyncIOMotorClient # type: ignore
+from dotenv import load_dotenv # type: ignore
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
