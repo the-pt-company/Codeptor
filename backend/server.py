@@ -29,7 +29,7 @@ from google.oauth2 import id_token as google_id_token # type: ignore
 from google.auth.transport import requests as google_requests # type: ignore
 import requests # type: ignore
 
-from database import db, client
+from database import db, client  # type: ignore
 
 
 from starlette.responses import StreamingResponse # type: ignore
@@ -387,37 +387,13 @@ def calculate_reading_time(text: str) -> int:
 
 def _user_response(user: dict) -> UserResponse:
     """Build a UserResponse from a raw MongoDB document."""
-    return UserResponse(  # type: ignore
-        email=user["email"],
-        full_name=user["full_name"],
-        username=user["username"],
-        bio=user.get("bio"),
-        avatar_url=user.get("avatar_url"),
-        github_url=user.get("github_url"),
-        linkedin_url=user.get("linkedin_url"),
-        website_url=user.get("website_url"),
-        location=user.get("location"),
-        skills=user.get("skills", []),
-        created_at=parse_datetime(user["created_at"]),
-    )
+    return UserResponse(email=user["email"], full_name=user["full_name"], username=user["username"], bio=user.get("bio"), avatar_url=user.get("avatar_url"), github_url=user.get("github_url"), linkedin_url=user.get("linkedin_url"), website_url=user.get("website_url"), location=user.get("location"), skills=user.get("skills", []), created_at=parse_datetime(user["created_at"]))  # type: ignore
 
 
 async def _developer_response(user: dict) -> DeveloperResponse:
     """Build a DeveloperResponse from a raw MongoDB document including project count."""
     count = await db.projects.count_documents({"user_username": user["username"]})
-    return DeveloperResponse(  # type: ignore
-        full_name=user["full_name"],
-        username=user["username"],
-        bio=user.get("bio"),
-        avatar_url=user.get("avatar_url"),
-        github_url=user.get("github_url"),
-        linkedin_url=user.get("linkedin_url"),
-        website_url=user.get("website_url"),
-        location=user.get("location"),
-        skills=user.get("skills", []),
-        created_at=parse_datetime(user["created_at"]),
-        project_count=count
-    )
+    return DeveloperResponse(full_name=user["full_name"], username=user["username"], bio=user.get("bio"), avatar_url=user.get("avatar_url"), github_url=user.get("github_url"), linkedin_url=user.get("linkedin_url"), website_url=user.get("website_url"), location=user.get("location"), skills=user.get("skills", []), created_at=parse_datetime(user["created_at"]), project_count=count)  # type: ignore
 
 
 def _project_response(project: dict) -> ProjectResponse:  # type: ignore
@@ -733,11 +709,7 @@ async def google_auth(data: GoogleAuthRequest):
             # Existing user → login
             logger.info(f"Google login for existing user: {email}")
             access_token = create_access_token(data={"sub": email})
-            return Token(  # type: ignore
-                access_token=access_token,
-                token_type="bearer",
-                user=_user_response(user),
-            )
+            return Token(access_token=access_token, token_type="bearer", user=_user_response(user))  # type: ignore
 
         # New user → register
         logger.info(f"Google signup for new user: {email}")
@@ -770,11 +742,7 @@ async def google_auth(data: GoogleAuthRequest):
         await db.users.insert_one(user_dict)
 
         access_token = create_access_token(data={"sub": email})
-        return Token(  # type: ignore
-            access_token=access_token,
-            token_type="bearer",
-            user=_user_response(user_dict),
-        )
+        return Token(access_token=access_token, token_type="bearer", user=_user_response(user_dict))  # type: ignore
 
     except ValueError as e:
         logger.error(f"Google token verification failed: {e}")
@@ -1077,7 +1045,7 @@ def _blog_response(blog: dict) -> BlogResponse:
     """Build a BlogResponse from a raw MongoDB document."""
     b = blog.copy()
     if "_id" in b:
-        del b["_id"]
+        del b["_id"]  # type: ignore
     b["created_at"] = parse_datetime(b.get("created_at", datetime.now(timezone.utc).isoformat()))
     b["updated_at"] = parse_datetime(b.get("updated_at", datetime.now(timezone.utc).isoformat()))
     if b.get("published_at"):
