@@ -4,10 +4,12 @@ import { Header } from '../components/layout/Header';
 import { Footer } from '../components/layout/Footer';
 import { useAuth } from '../context/AuthContext';
 import { projectAPI, blogAPI, userAPI, analyticsAPI, resolveMediaUrl } from '../lib/api';
+import ShareCardModal from '../components/share/ShareCardModal';
+import ShareModal from '../components/share/ShareModal';
+import { useTilt } from '../hooks/useTilt';
 import { toast } from 'sonner';
 import {
     ProfileHeader,
-    ProfileShareCard,
     AnalyticsCard,
     SkillsSection,
     ActivityTimeline,
@@ -15,7 +17,7 @@ import {
 } from '../components/profile';
 import {
     LayoutGrid, List, Github, Eye, Star,
-    Code2, BookOpen, MessageSquare, Users
+    Code2, MessageSquare, Users
 } from 'lucide-react';
 
 export default function Profile() {
@@ -32,7 +34,12 @@ export default function Profile() {
     const [following, setFollowing] = useState([]);
     const [profileVisits, setProfileVisits] = useState(0);
     const [showShareCard, setShowShareCard] = useState(false);
+    const [showShareModal, setShowShareModal] = useState(false);
     const [showUserList, setShowUserList] = useState(null); // 'followers' | 'following' | null
+
+    const tiltAnalytics = useTilt(4);
+    const tiltSkills = useTilt(4);
+    const tiltActivity = useTilt(4);
 
     // Determine if viewing own profile
     const isOwnProfile = isAuthenticated && currentUser?.username === username;
@@ -116,7 +123,7 @@ export default function Profile() {
         } finally {
             setLoading(false);
         }
-    }, [isOwnProfile, currentUser, username]);
+    }, [isOwnProfile, currentUser, username, isAuthenticated]);
 
     useEffect(() => {
         fetchProfileData();
@@ -230,33 +237,35 @@ export default function Profile() {
                     isOwnProfile={isOwnProfile}
                     onFollow={handleFollow}
                     isFollowing={isFollowing}
-                    onShare={() => setShowShareCard(true)}
+                    onShare={() => setShowShareModal(true)}
                     stats={stats}
                     onShowFollowers={() => setShowUserList('followers')}
                     onShowFollowing={() => setShowUserList('following')}
                 />
 
-                {/* Analytics */}
-                <AnalyticsCard
-                    stats={stats}
-                    isOwnProfile={isOwnProfile}
-                    followerList={followers}
-                    followingList={following}
-                />
+                <div {...tiltAnalytics}>
+                    <AnalyticsCard
+                        stats={stats}
+                        isOwnProfile={isOwnProfile}
+                        followerList={followers}
+                        followingList={following}
+                    />
+                </div>
 
                 {/* Two Column Layout for Skills + Activity */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                    {/* Skills */}
-                    <SkillsSection
-                        skills={profileUser?.skills}
-                        isOwnProfile={isOwnProfile}
-                    />
-
-                    {/* Activity Timeline */}
-                    <ActivityTimeline
-                        activities={realActivities}
-                        isOwnProfile={isOwnProfile}
-                    />
+                    <div {...tiltSkills}>
+                        <SkillsSection
+                            skills={profileUser?.skills}
+                            isOwnProfile={isOwnProfile}
+                        />
+                    </div>
+                    <div {...tiltActivity}>
+                        <ActivityTimeline
+                            activities={realActivities}
+                            isOwnProfile={isOwnProfile}
+                        />
+                    </div>
                 </div>
 
                 {/* Socials & Links */}
@@ -380,14 +389,27 @@ export default function Profile() {
             </main>
             <Footer />
 
-            {/* Share Card Modal */}
+            {/* Profile Card Modal (download as PNG) */}
             {showShareCard && (
-                <ProfileShareCard
+                <ShareCardModal
+                    isOpen={showShareCard}
+                    onClose={() => setShowShareCard(false)}
                     user={profileUser}
                     stats={stats}
-                    onClose={() => setShowShareCard(false)}
+                    type="profile"
                 />
             )}
+
+            {/* Share Link Modal */}
+            <ShareModal
+                isOpen={showShareModal}
+                onClose={() => setShowShareModal(false)}
+                url={`${window.location.origin}/profile/${username}`}
+                title={`${profileUser?.full_name || username}'s Developer Profile on KudosDev`}
+                description={profileUser?.bio || 'Check out this developer on KudosDev!'}
+                type="profile"
+                onGenerateCard={() => setShowShareCard(true)}
+            />
 
             {/* Follower / Following List Modal */}
             {showUserList && (

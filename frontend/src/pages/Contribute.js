@@ -28,7 +28,7 @@ const formatTimeAgo = (dateStr) => {
 };
 
 export default function Contribute() {
-    const { isAuthenticated } = useAuth();
+    useAuth();
     const [searchQuery, setSearchQuery] = useState('');
     const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(true);

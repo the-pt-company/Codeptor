@@ -12,7 +12,6 @@ import {
     Save,
     UserCircle,
     Palette,
-    Upload,
     Camera,
     Github,
     Linkedin,
@@ -29,7 +28,8 @@ export default function Settings() {
 
     const [activeTab, setActiveTab] = useState('profile');
     const [loading, setLoading] = useState(false);
-    const [uploading, setUploading] = useState(false);
+
+
     const fileInputRef = React.useRef(null);
 
     // Bookmarks State
@@ -81,7 +81,7 @@ export default function Settings() {
         const formData = new FormData();
         formData.append('file', file);
 
-        setUploading(true);
+
         const toastId = toast.loading('Uploading avatar...');
         try {
             // Reusing blogAPI.uploadImage for simplicity if backend endpoint is general enough
@@ -94,7 +94,7 @@ export default function Settings() {
         } catch (error) {
             toast.error('Failed to upload avatar', { id: toastId });
         } finally {
-            setUploading(false);
+
             e.target.value = ''; // Reset input
         }
     };

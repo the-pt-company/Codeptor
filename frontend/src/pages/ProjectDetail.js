@@ -1,14 +1,18 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Header } from '../components/layout/Header';
 import { Footer } from '../components/layout/Footer';
 import { projectAPI, resolveMediaUrl } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
+import { useTilt } from '../hooks/useTilt';
+import ShareModal from '../components/share/ShareModal';
+import ShareCardModal from '../components/share/ShareCardModal';
 import {
     Github, ExternalLink, Calendar, ArrowLeft, Code2,
     Share2, MessageSquare, Star, Bookmark, ChevronLeft,
     ChevronRight, X, ExternalLinkIcon, Eye, Clock,
-    Layers, Heart, Users, Globe
+    Layers, Heart, Globe
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -150,11 +154,21 @@ export default function ProjectDetail() {
     const [error, setError] = useState(null);
 
     const [lightboxIndex, setLightboxIndex] = useState(null);
+    const [heroVisible, setHeroVisible] = useState(false);
+    const [shareOpen, setShareOpen] = useState(false);
+    const [showShareCard, setShowShareCard] = useState(false);
+    const sidebarRef = useRef(null);
+
     const [isBookmarked, setIsBookmarked] = useState(false);
     const [liked, setLiked] = useState(false);
     const [likeCount, setLikeCount] = useState(0);
-    const [heroVisible, setHeroVisible] = useState(false);
-    const sidebarRef = useRef(null);
+
+    const tiltContent = useTilt(3);
+    const tiltCommunity = useTilt(4);
+    const tiltDev = useTilt(5);
+    const tiltLinks = useTilt(5);
+    const tiltStack = useTilt(5);
+    const tiltMeta = useTilt(5);
 
     useEffect(() => {
         const fetchProject = async () => {
@@ -168,27 +182,19 @@ export default function ProjectDetail() {
                     setError('Project not found');
                 }
             } catch (err) {
-                setError('Failed to load project details');
+                console.error('Fetch error:', err);
+                setError('Failed to load project');
             } finally {
                 setLoading(false);
-                setTimeout(() => setHeroVisible(true), 100);
+                setHeroVisible(true);
             }
         };
         if (projectId) fetchProject();
     }, [projectId]);
 
     const handleShare = useCallback(async () => {
-        try {
-            if (navigator.share) {
-                await navigator.share({ title: project.title, url: window.location.href });
-            } else {
-                await navigator.clipboard.writeText(window.location.href);
-                toast.success('Link copied to clipboard!');
-            }
-        } catch {
-            toast.error('Could not share project');
-        }
-    }, [project]);
+        setShareOpen(true);
+    }, []);
 
     const handleLike = () => {
         if (!isAuthenticated) { toast.error('Login to star this project'); return; }
@@ -240,20 +246,6 @@ export default function ProjectDetail() {
 
     return (
         <>
-            <style>{`
-                @keyframes fadeInUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
-                @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-                .fade-in-up { animation: fadeInUp 0.5s ease forwards; }
-                .fade-in { animation: fadeIn 0.4s ease forwards; }
-                .delay-100 { animation-delay: 0.1s; opacity: 0; }
-                .delay-200 { animation-delay: 0.2s; opacity: 0; }
-                .delay-300 { animation-delay: 0.3s; opacity: 0; }
-                .delay-400 { animation-delay: 0.4s; opacity: 0; }
-                .gallery-scroll::-webkit-scrollbar { height: 4px; }
-                .gallery-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
-                .gallery-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-            `}</style>
-
             <div className="min-h-screen bg-[#f8fafc] flex flex-col">
                 <Header />
 
@@ -264,7 +256,12 @@ export default function ProjectDetail() {
                         <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
                         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
 
-                        <div className={`max-w-7xl mx-auto relative z-10 ${heroVisible ? 'fade-in-up' : 'opacity-0'}`}>
+                        <motion.div 
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.6 }}
+                            className="max-w-7xl mx-auto relative z-10"
+                        >
                             {/* Back Button */}
                             <button
                                 onClick={() => navigate(-1)}
@@ -340,7 +337,7 @@ export default function ProjectDetail() {
                                     </button>
                                 </div>
                             </div>
-                        </div>
+                        </motion.div>
                     </div>
 
                     {/* ── Main Content ── */}
@@ -351,7 +348,11 @@ export default function ProjectDetail() {
                             <div className="lg:col-span-2 space-y-10">
 
                                 {/* Featured Thumbnail */}
-                                <div className={`fade-in-up delay-100`}>
+                                <motion.div 
+                                    initial={{ opacity: 0, scale: 0.98 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ delay: 0.2, duration: 0.5 }}
+                                >
                                     {allImages.length > 0 ? (
                                         <>
                                             {/* Main Image */}
@@ -365,9 +366,8 @@ export default function ProjectDetail() {
                                                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                                                 />
                                                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all flex items-center justify-center">
-                                                    <div className="w-12 h-12 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all scale-75 group-hover:scale-100 shadow-lg">
-                                                        <Eye className="w-5 h-5 text-gray-800" />
-                                                    </div>
+                                                    <div className="w-12 h-12 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all scale-75 group-hover:scale-100 shadow-lg" />
+                                                    <Eye className="w-10 h-10 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                                                 </div>
                                             </div>
 
@@ -405,10 +405,16 @@ export default function ProjectDetail() {
                                             </div>
                                         </div>
                                     )}
-                                </div>
+                                </motion.div>
 
                                 {/* Project Overview */}
-                                <div className={`fade-in-up delay-200 bg-white rounded-2xl border border-slate-100 p-8 shadow-sm`}>
+                                <motion.div 
+                                    initial={{ opacity: 0, y: 20 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    {...tiltContent}
+                                    className="bg-white rounded-2xl border border-slate-100 p-8 shadow-sm"
+                                >
                                     <h2 className="text-2xl font-bold text-gray-900 mb-5 flex items-center gap-3">
                                         <span className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center">
                                             <Eye className="w-4 h-4 text-blue-500" />
@@ -436,10 +442,16 @@ export default function ProjectDetail() {
                                             View Documentation
                                         </a>
                                     )}
-                                </div>
+                                </motion.div>
 
                                 {/* Community Actions */}
-                                <div className={`fade-in-up delay-300 bg-white rounded-2xl border border-slate-100 p-8 shadow-sm`}>
+                                <motion.div 
+                                    initial={{ opacity: 0, y: 20 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    {...tiltCommunity}
+                                    className="bg-white rounded-2xl border border-slate-100 p-8 shadow-sm"
+                                >
                                     <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
                                         <span className="w-8 h-8 rounded-xl bg-amber-50 flex items-center justify-center">
                                             <Heart className="w-4 h-4 text-amber-500" />
@@ -492,14 +504,20 @@ export default function ProjectDetail() {
                                             Share
                                         </button>
                                     </div>
-                                </div>
+                                </motion.div>
                             </div>
 
                             {/* ── Right Sidebar ── */}
                             <div className="space-y-6" ref={sidebarRef}>
 
                                 {/* Developer Card */}
-                                <div className={`fade-in-up delay-100 bg-white rounded-2xl border border-slate-100 p-6 shadow-sm`}>
+                                <motion.div 
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: 0.3 }}
+                                    {...tiltDev}
+                                    className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm"
+                                >
                                     <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.12em] mb-4">Developer</p>
                                     <Link
                                         to={`/profile/${project.user_username}`}
@@ -519,10 +537,16 @@ export default function ProjectDetail() {
                                             <span className="text-xs text-blue-500 font-semibold group-hover:underline">View Profile →</span>
                                         </div>
                                     </Link>
-                                </div>
+                                </motion.div>
 
                                 {/* Links Card */}
-                                <div className={`fade-in-up delay-200 bg-white rounded-2xl border border-slate-100 p-6 shadow-sm space-y-3`}>
+                                <motion.div 
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: 0.4 }}
+                                    {...tiltLinks}
+                                    className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm space-y-3"
+                                >
                                     <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.12em] mb-4">Links</p>
 
                                     {project.live_url && (
@@ -554,11 +578,17 @@ export default function ProjectDetail() {
                                         <Share2 className="w-4 h-4" />
                                         Share Project
                                     </button>
-                                </div>
+                                </motion.div>
 
                                 {/* Tech Stack Card */}
                                 {project.tech_stack?.length > 0 && (
-                                    <div className={`fade-in-up delay-300 bg-white rounded-2xl border border-slate-100 p-6 shadow-sm`}>
+                                    <motion.div 
+                                        initial={{ opacity: 0, x: 20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: 0.5 }}
+                                        {...tiltStack}
+                                        className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm"
+                                    >
                                         <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.12em] mb-4">Tech Stack</p>
                                         <div className="flex flex-wrap gap-2">
                                             {project.tech_stack.map(tech => {
@@ -574,11 +604,17 @@ export default function ProjectDetail() {
                                                 );
                                             })}
                                         </div>
-                                    </div>
+                                    </motion.div>
                                 )}
 
                                 {/* Metadata Card */}
-                                <div className={`fade-in-up delay-400 bg-white rounded-2xl border border-slate-100 p-6 shadow-sm`}>
+                                <motion.div 
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: 0.6 }}
+                                    {...tiltMeta}
+                                    className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm"
+                                >
                                     <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.12em] mb-4">Details</p>
                                     <div className="space-y-3">
                                         <div className="flex items-center justify-between text-sm">
@@ -610,12 +646,17 @@ export default function ProjectDetail() {
                                             </div>
                                         )}
                                     </div>
-                                </div>
+                                </motion.div>
 
                                 {/* Discussion CTA */}
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.7 }}
+                                >
                                 <Link
                                     to={`/project/${project.project_id}/discussion`}
-                                    className="fade-in-up delay-400 group block bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-6 text-center hover:from-slate-800 hover:to-slate-700 transition-all hover:scale-[1.02] shadow-lg shadow-slate-200"
+                                    className="group block bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-6 text-center hover:from-slate-800 hover:to-slate-700 transition-all hover:scale-[1.02] shadow-lg shadow-slate-200"
                                 >
                                     <div className="w-12 h-12 mx-auto rounded-2xl bg-white/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                                         <MessageSquare className="w-6 h-6 text-blue-300" />
@@ -623,6 +664,7 @@ export default function ProjectDetail() {
                                     <p className="text-white font-bold text-sm mb-1">Join the Discussion</p>
                                     <p className="text-slate-400 text-xs">Share your thoughts or ask questions</p>
                                 </Link>
+                                </motion.div>
                             </div>
                         </div>
                     </div>
@@ -631,12 +673,31 @@ export default function ProjectDetail() {
                 <Footer />
             </div>
 
-            {/* Lightbox */}
             {lightboxIndex !== null && (
                 <Lightbox
                     images={allImages}
                     initialIndex={lightboxIndex}
                     onClose={() => setLightboxIndex(null)}
+                />
+            )}
+
+            <ShareModal
+                isOpen={shareOpen}
+                onClose={() => setShareOpen(false)}
+                url={window.location.href}
+                title={`Check out ${project.title} on KudosDev!`}
+                description={project.description}
+                type="project"
+                onGenerateCard={() => setShowShareCard(true)}
+            />
+
+            {/* Share Card Modal */}
+            {showShareCard && (
+                <ShareCardModal
+                    isOpen={showShareCard}
+                    onClose={() => setShowShareCard(false)}
+                    project={project}
+                    type="project"
                 />
             )}
         </>

@@ -6,13 +6,13 @@ import { toast } from 'sonner';
 import { Header } from '../components/layout/Header';
 import { Footer } from '../components/layout/Footer';
 import {
-    Plus, Edit2, Trash2, Send, EyeOff, Eye, Clock, MoreVertical,
+    Plus, Edit2, Trash2, Send, EyeOff, Eye, MoreVertical,
     FileText, CheckCircle
 } from 'lucide-react';
 
 export default function BlogManagement() {
     const navigate = useNavigate();
-    const { user } = useAuth();
+    useAuth();
     const [blogs, setBlogs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('all');

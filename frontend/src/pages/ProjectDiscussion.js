@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Header } from '../components/layout/Header';
 import { Footer } from '../components/layout/Footer';
 import { projectAPI } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { 
     Send, MessageSquare, ArrowLeft, 
-    User, Clock, Trash2, Shield 
+    Clock, Shield 
 } from 'lucide-react';
 import { toast } from 'sonner';
 

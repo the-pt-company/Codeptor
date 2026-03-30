@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { blogAPI } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
@@ -25,9 +25,9 @@ export default function BlogPost() {
 
     useEffect(() => {
         fetchBlog();
-    }, [slug]);
+    }, [fetchBlog]);
 
-    const fetchBlog = async () => {
+    const fetchBlog = useCallback(async () => {
         try {
             const res = await blogAPI.getBySlug(slug);
             setBlog(res.data);
@@ -36,7 +36,7 @@ export default function BlogPost() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [slug]);
 
     const toggleBookmark = async () => {
         if (!isAuthenticated) {

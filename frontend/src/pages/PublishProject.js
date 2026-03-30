@@ -12,7 +12,6 @@ import {
     TagInput,
     MediaUploader,
     VideoInput,
-    MarkdownEditor,
     VersionEntry,
     VersionEntryForm,
     DocumentUploader
