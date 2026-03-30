@@ -17,3 +17,13 @@ services:
         sync: false          # Set manually in Render dashboard
       - key: FRONTEND_URL
         value: https://kudosd.vercel.app   # Update to your Vercel domain
+      - key: SMTP_HOST
+        sync: false          # Set manually in Render dashboard
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false          # Set manually in Render dashboard
+      - key: SMTP_PASS
+        sync: false          # Set manually in Render dashboard
+      - key: SMTP_FROM
+        sync: false          # Set manually in Render dashboard

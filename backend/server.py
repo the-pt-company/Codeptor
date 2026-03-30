@@ -764,10 +764,21 @@ async def forgot_password(request: ForgotPasswordRequest):
             }
         },
     )
-    
-    # Send email in background (non-blocking) - returns immediately
-    asyncio.create_task(send_reset_email(request.email, reset_token))
-    
+
+    if not all([SMTP_HOST, SMTP_USER, SMTP_PASS]):
+        logger.error(f"SMTP not configured; cannot send password reset email to {request.email}")
+        raise HTTPException(
+            status_code=503,
+            detail="Password reset email service is not configured. Please contact support or try again later.",
+        )
+
+    email_sent = await send_reset_email(request.email, reset_token)
+    if not email_sent:
+        raise HTTPException(
+            status_code=502,
+            detail="We couldn't send the reset email right now. Please try again later.",
+        )
+
     return {"message": "If an account exists with this email, a reset link has been sent."}
 
 
