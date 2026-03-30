@@ -139,7 +139,8 @@ def parse_datetime(value) -> datetime:
 
 async def send_reset_email(email: str, token: str):
     """Send a password reset email to the user. Returns success status."""
-    reset_link = f"{FRONTEND_URL}/reset-password/{token}"
+    # Use query-param format so the link works cleanly on any SPA router
+    reset_link = f"{FRONTEND_URL}/reset-password?token={token}"
     
     if not all([SMTP_HOST, SMTP_USER, SMTP_PASS]):
         logger.error(f"❌ SMTP not configured! Password reset email NOT sent to {email}")
@@ -170,19 +171,26 @@ The KudosD Team
     
     try:
         logger.info(f"Attempting to send password reset email to {email}...")
+        # Port 465 → implicit TLS (use_tls=True)
+        # Port 587 → STARTTLS (use_tls=False, start_tls=True)
+        # Any other port → plain (use_tls=False, start_tls=False)
+        _use_tls = SMTP_PORT == 465
+        _start_tls = SMTP_PORT == 587
         await aiosmtplib.send(
             msg,
             hostname=SMTP_HOST,
             port=SMTP_PORT,
             username=SMTP_USER,
             password=SMTP_PASS,
-            use_tls=(SMTP_PORT == 465),
-            start_tls=(SMTP_PORT == 587),
+            use_tls=_use_tls,
+            start_tls=_start_tls,
+            timeout=30,
         )
         logger.info(f"✅ Password reset email sent to {email}")
         return True
     except Exception as e:
         logger.error(f"❌ Failed to send reset email to {email}")
+        logger.error(f"   Error type: {type(e).__name__}")
         logger.error(f"   Error: {str(e)}")
         logger.error(f"   Reset link: {reset_link}")
         return False
@@ -643,10 +651,17 @@ async def _watch_comments():
 app = FastAPI(lifespan=lifespan)
 
 _frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:3000")
+# Allow both the configured frontend URL and common local dev origins
+_allowed_origins = list({
+    _frontend_url,
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://127.0.0.1:3000",
+})
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=[_frontend_url],
+    allow_origins=_allowed_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -743,16 +758,24 @@ async def update_me(user_update: UserUpdate, current_user: dict = Depends(get_cu
 @api_router.post("/auth/forgot-password")
 async def forgot_password(request: ForgotPasswordRequest):
     logger.info(f"Password reset requested for: {request.email}")
-    
+
+    # Fail fast if SMTP isn't configured — no point generating a token
+    if not all([SMTP_HOST, SMTP_USER, SMTP_PASS]):
+        logger.error("SMTP not configured; cannot send password reset email.")
+        raise HTTPException(
+            status_code=503,
+            detail="Password reset email service is not configured. Please contact support or try again later.",
+        )
+
     user = await db.users.find_one({"email": request.email})
     if not user:
+        # Return the same generic message so as not to reveal whether an account exists
         logger.warning(f"Password reset requested for non-existent email: {request.email}")
         return {"message": "If an account exists with this email, a reset link has been sent."}
 
     reset_token_id = str(uuid.uuid4())
-    token_data = {"sub": request.email, "type": "reset", "jti": reset_token_id}
     expire = datetime.now(timezone.utc) + timedelta(minutes=15)
-    token_data.update({"exp": expire})
+    token_data = {"sub": request.email, "type": "reset", "jti": reset_token_id, "exp": expire}
     reset_token = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
 
     await db.users.update_one(
@@ -765,21 +788,60 @@ async def forgot_password(request: ForgotPasswordRequest):
         },
     )
 
-    if not all([SMTP_HOST, SMTP_USER, SMTP_PASS]):
-        logger.error(f"SMTP not configured; cannot send password reset email to {request.email}")
-        raise HTTPException(
-            status_code=503,
-            detail="Password reset email service is not configured. Please contact support or try again later.",
-        )
-
     email_sent = await send_reset_email(request.email, reset_token)
     if not email_sent:
+        # Clean up the orphaned token so it can't be replayed later
+        await db.users.update_one(
+            {"email": request.email},
+            {"$unset": {"reset_token_id": "", "reset_token_expires_at": ""}},
+        )
         raise HTTPException(
             status_code=502,
             detail="We couldn't send the reset email right now. Please try again later.",
         )
 
     return {"message": "If an account exists with this email, a reset link has been sent."}
+
+
+@api_router.get("/auth/validate-reset-token")
+async def validate_reset_token(token: str):
+    """Validate a password reset token without consuming it.
+    The frontend calls this on page load to show a proper error if the token
+    is missing, expired, or already used.
+    """
+    if not token:
+        raise HTTPException(status_code=400, detail="Reset token is required")
+
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        if payload.get("type") != "reset":
+            raise HTTPException(status_code=400, detail="Invalid token type")
+        email = payload.get("sub")
+        token_id = payload.get("jti")
+    except JWTError:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+
+    if not email or not token_id:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+
+    user = await db.users.find_one({"email": email})
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+
+    stored_token_id = user.get("reset_token_id")
+    stored_expiry = user.get("reset_token_expires_at")
+    if stored_token_id != token_id or not stored_expiry:
+        raise HTTPException(status_code=400, detail="This reset link is invalid or has already been used")
+
+    if parse_datetime(stored_expiry) < datetime.now(timezone.utc):
+        # Clean up expired token
+        await db.users.update_one(
+            {"email": email},
+            {"$unset": {"reset_token_id": "", "reset_token_expires_at": ""}},
+        )
+        raise HTTPException(status_code=400, detail="This reset link has expired. Please request a new one.")
+
+    return {"valid": True, "email": email}
 
 
 @api_router.post("/auth/reset-password")
