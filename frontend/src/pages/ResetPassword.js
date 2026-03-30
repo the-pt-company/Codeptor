@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Header } from '../components/layout/Header';
 import { authAPI } from '../lib/api';
+import { getErrorMessage } from '../lib/utils';
 import { Lock, CheckCircle2, Eye, EyeOff } from 'lucide-react';
 
 export default function ResetPassword() {
@@ -13,11 +14,22 @@ export default function ResetPassword() {
     const [success, setSuccess] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
+    const hasValidToken = Boolean(token);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (!hasValidToken) {
+            toast.error('This reset link is invalid. Please request a new one.');
+            return;
+        }
+
         if (password !== confirmPassword) {
             toast.error('Passwords do not match');
+            return;
+        }
+
+        if (password.length < 8) {
+            toast.error('Password must be at least 8 characters long');
             return;
         }
 
@@ -30,7 +42,7 @@ export default function ResetPassword() {
             setSuccess(true);
             toast.success('Password reset successfully');
         } catch (error) {
-            toast.error(error.response?.data?.detail || 'Failed to reset password');
+            toast.error(getErrorMessage(error, 'Failed to reset password'));
         } finally {
             setLoading(false);
         }
@@ -49,7 +61,9 @@ export default function ResetPassword() {
                                     Set New Password
                                 </h1>
                                 <p className="mt-2 text-sm text-muted-foreground">
-                                    Please enter your new password below.
+                                    {hasValidToken
+                                        ? 'Please enter your new password below.'
+                                        : 'This reset link is missing or invalid. Please request a new one.'}
                                 </p>
                             </div>
 
@@ -65,10 +79,12 @@ export default function ResetPassword() {
                                                 id="password"
                                                 type={showPassword ? 'text' : 'password'}
                                                 required
+                                                minLength={8}
                                                 value={password}
                                                 onChange={(e) => setPassword(e.target.value)}
                                                 className="flex h-10 w-full rounded-md border border-input bg-background pl-10 pr-10 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                                 placeholder="••••••••"
+                                                disabled={!hasValidToken}
                                             />
                                             <button
                                                 type="button"
@@ -91,10 +107,12 @@ export default function ResetPassword() {
                                                 id="confirmPassword"
                                                 type={showConfirm ? 'text' : 'password'}
                                                 required
+                                                minLength={8}
                                                 value={confirmPassword}
                                                 onChange={(e) => setConfirmPassword(e.target.value)}
                                                 className="flex h-10 w-full rounded-md border border-input bg-background pl-10 pr-10 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                                 placeholder="••••••••"
+                                                disabled={!hasValidToken}
                                             />
                                             <button
                                                 type="button"
@@ -110,10 +128,10 @@ export default function ResetPassword() {
 
                                 <button
                                     type="submit"
-                                    disabled={loading}
+                                    disabled={loading || !hasValidToken}
                                     className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 rounded-md font-medium transition-all active:scale-95 disabled:opacity-50"
                                 >
-                                    {loading ? 'Resetting...' : 'Reset Password'}
+                                    {loading ? 'Resetting...' : hasValidToken ? 'Reset Password' : 'Invalid Reset Link'}
                                 </button>
                             </form>
                         </>

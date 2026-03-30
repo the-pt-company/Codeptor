@@ -68,6 +68,7 @@ SMTP_USER = os.getenv("SMTP_USER")
 SMTP_PASS = os.getenv("SMTP_PASS")
 SMTP_FROM = os.getenv("SMTP_FROM", "noreply@kudosd.com")
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024  # 10 MB
+PASSWORD_MIN_LENGTH = 8
 
 security = HTTPBearer()
 
@@ -119,6 +120,14 @@ def create_access_token(data: dict) -> str:
     expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def validate_password_strength(password: str) -> None:
+    if len(password) < PASSWORD_MIN_LENGTH:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Password must be at least {PASSWORD_MIN_LENGTH} characters long",
+        )
 
 
 def parse_datetime(value) -> datetime:
@@ -657,6 +666,8 @@ api_router = APIRouter(prefix="/api")
 
 @api_router.post("/auth/register", response_model=Token)
 async def register(user_data: UserRegister):
+    validate_password_strength(user_data.password)
+
     existing_user = await db.users.find_one({"email": user_data.email})
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -738,10 +749,21 @@ async def forgot_password(request: ForgotPasswordRequest):
         logger.warning(f"Password reset requested for non-existent email: {request.email}")
         return {"message": "If an account exists with this email, a reset link has been sent."}
 
-    token_data = {"sub": request.email, "type": "reset"}
+    reset_token_id = str(uuid.uuid4())
+    token_data = {"sub": request.email, "type": "reset", "jti": reset_token_id}
     expire = datetime.now(timezone.utc) + timedelta(minutes=15)
     token_data.update({"exp": expire})
     reset_token = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
+
+    await db.users.update_one(
+        {"email": request.email},
+        {
+            "$set": {
+                "reset_token_id": reset_token_id,
+                "reset_token_expires_at": expire.isoformat(),
+            }
+        },
+    )
     
     # Send email in background (non-blocking) - returns immediately
     asyncio.create_task(send_reset_email(request.email, reset_token))
@@ -756,15 +778,39 @@ async def reset_password(data: ResetPassword):
         if payload.get("type") != "reset":
             raise HTTPException(status_code=400, detail="Invalid token type")
         email = payload.get("sub")
+        token_id = payload.get("jti")
     except JWTError:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+
+    if not email or not token_id:
         raise HTTPException(status_code=400, detail="Invalid or expired reset token")
 
     user = await db.users.find_one({"email": email})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
+    stored_token_id = user.get("reset_token_id")
+    stored_expiry = user.get("reset_token_expires_at")
+    if stored_token_id != token_id or not stored_expiry:
+        raise HTTPException(status_code=400, detail="This reset link is invalid or has already been used")
+
+    if parse_datetime(stored_expiry) < datetime.now(timezone.utc):
+        await db.users.update_one(
+            {"email": email},
+            {"$unset": {"reset_token_id": "", "reset_token_expires_at": ""}},
+        )
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+
+    validate_password_strength(data.new_password)
+
     hashed_password = get_password_hash(data.new_password)
-    await db.users.update_one({"email": email}, {"$set": {"password": hashed_password}})
+    await db.users.update_one(
+        {"email": email},
+        {
+            "$set": {"password": hashed_password},
+            "$unset": {"reset_token_id": "", "reset_token_expires_at": ""},
+        },
+    )
 
     return {"message": "Password reset successfully"}
 

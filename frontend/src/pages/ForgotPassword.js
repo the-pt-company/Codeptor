@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Header } from '../components/layout/Header';
 import { authAPI } from '../lib/api';
+import { getErrorMessage } from '../lib/utils';
 import { Mail, ArrowLeft, CheckCircle2 } from 'lucide-react';
 
 export default function ForgotPassword() {
@@ -18,7 +19,7 @@ export default function ForgotPassword() {
             setSubmitted(true);
             toast.success('Reset link sent to your email');
         } catch (error) {
-            toast.error(error.response?.data?.detail || 'Failed to send reset link');
+            toast.error(getErrorMessage(error, 'Failed to send reset link'));
         } finally {
             setLoading(false);
         }
