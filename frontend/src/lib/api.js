@@ -59,6 +59,8 @@ export const projectAPI = {
             'Content-Type': 'multipart/form-data',
         },
     }),
+    getComments: (id) => api.get(`/api/projects/${id}/comments`),
+    addComment: (id, data) => api.post(`/api/projects/${id}/comments`, data),
 };
 
 // Blog APIs

@@ -21,6 +21,7 @@ import BlogPost from './pages/BlogPost';
 import BlogExplore from './pages/BlogExplore';
 import BlogManagement from './pages/BlogManagement';
 import ProjectDetail from './pages/ProjectDetail';
+import ProjectDiscussion from './pages/ProjectDiscussion';
 
 const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || '';
 
@@ -43,6 +44,7 @@ function App() {
                 <Route path="/blogs" element={<Navigate to="/explore" replace />} />
                 <Route path="/blog/:slug" element={<BlogPost />} />
                 <Route path="/project/:projectId" element={<ProjectDetail />} />
+                <Route path="/project/:projectId/discussion" element={<ProjectDiscussion />} />
                 <Route
                   path="/blog/new"
                   element={

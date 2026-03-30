@@ -337,6 +337,21 @@ class Token(BaseModel):
     user: UserResponse
 
 
+# --- Project Discussion Models ---
+
+class ProjectComment(BaseModel):
+    content: str
+
+
+class ProjectCommentResponse(BaseModel):
+    comment_id: str
+    project_id: str
+    user_email: str
+    user_username: str
+    content: str
+    created_at: datetime
+
+
 # --- Blog Models ---
 
 class BlogCreate(BaseModel):
@@ -1088,6 +1103,52 @@ async def delete_project(project_id: str, current_user: dict = Depends(get_curre
     })
 
     return {"message": "Project deleted successfully"}
+
+
+# --- Project Discussion Endpoints ---
+
+@api_router.get("/projects/{project_id}/comments", response_model=List[ProjectCommentResponse])
+async def get_project_comments(project_id: str):
+    comments = (
+        await db.project_comments.find({"project_id": project_id}, {"_id": 0})
+        .sort("created_at", -1)
+        .to_list(100)
+    )
+    return comments
+
+
+@api_router.post("/projects/{project_id}/comments", response_model=ProjectCommentResponse)
+async def add_project_comment(
+    project_id: str,
+    comment: ProjectComment,
+    current_user: dict = Depends(get_current_user),
+):
+    project = await db.projects.find_one({"project_id": project_id})
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    new_comment = {
+        "comment_id": str(uuid.uuid4()),
+        "project_id": project_id,
+        "user_email": current_user["email"],
+        "user_username": current_user["username"],
+        "content": comment.content,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+    await db.project_comments.insert_one(new_comment)
+    
+    # Return response
+    response_data = new_comment.copy()
+    response_data.pop("_id", None)
+
+    # Publish for real-time
+    await event_bus.publish({
+        "type": "project:comment:added",
+        "data": response_data,
+    })
+
+    return response_data
 
 
 # ---------------------------------------------------------------------------

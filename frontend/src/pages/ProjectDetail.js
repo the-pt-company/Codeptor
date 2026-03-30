@@ -215,9 +215,12 @@ export default function ProjectDetail() {
                             <p className="text-sm text-foreground/80 mb-4">
                                 Love this project? Leave it a star or share your thoughts with the developer!
                             </p>
-                            <button className="text-xs font-bold text-accent hover:underline">
+                            <Link 
+                                to={`/project/${project.project_id}/discussion`}
+                                className="text-xs font-bold text-accent hover:underline"
+                            >
                                 JOIN THE DISCUSSION →
-                            </button>
+                            </Link>
                         </div>
                     </div>
                 </div>
