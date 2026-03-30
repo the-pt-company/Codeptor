@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Header } from '../components/layout/Header';
 import { Footer } from '../components/layout/Footer';
 import { useAuth } from '../context/AuthContext';
-import { projectAPI, blogAPI, userAPI } from '../lib/api';
+import { projectAPI, blogAPI, userAPI, resolveMediaUrl } from '../lib/api';
 import { useEventStream } from '../hooks/useEventStream';
 import BlogCard from '../components/blog/BlogCard';
 import {
@@ -373,7 +373,7 @@ const ProjectCard = ({ project }) => {
             <div className="aspect-video bg-muted relative overflow-hidden">
                 {project.thumbnail_url ? (
                     <img
-                        src={project.thumbnail_url}
+                        src={resolveMediaUrl(project.thumbnail_url)}
                         alt={project.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />

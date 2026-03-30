@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Header } from '../components/layout/Header';
 import { Footer } from '../components/layout/Footer';
-import { projectAPI } from '../lib/api';
+import { projectAPI, resolveMediaUrl } from '../lib/api';
 import { 
     Github, ExternalLink, Calendar, User, 
     ArrowLeft, Code2, Share2, MessageSquare 
@@ -118,7 +118,7 @@ export default function ProjectDetail() {
                         <div className="aspect-video rounded-2xl overflow-hidden bg-card border border-border group relative shadow-2xl">
                             {project.thumbnail_url ? (
                                 <img 
-                                    src={project.thumbnail_url} 
+                                    src={resolveMediaUrl(project.thumbnail_url)} 
                                     alt={project.title} 
                                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                                 />

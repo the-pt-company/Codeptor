@@ -2,6 +2,17 @@ import axios from 'axios';
 
 const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000';
 
+/**
+ * Resolves a relative upload URL (e.g. /uploads/img.jpg) to an absolute
+ * URL pointing to the backend server. If the URL is already absolute, 
+ * it is returned as-is.
+ */
+export const resolveMediaUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    return `${API_BASE_URL}${url}`;
+};
+
 const api = axios.create({
     baseURL: API_BASE_URL,
     headers: {

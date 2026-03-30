@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { Header } from '../components/layout/Header';
 import { Footer } from '../components/layout/Footer';
 import { useAuth } from '../context/AuthContext';
-import { projectAPI, blogAPI, userAPI, analyticsAPI } from '../lib/api';
+import { projectAPI, blogAPI, userAPI, analyticsAPI, resolveMediaUrl } from '../lib/api';
 import { toast } from 'sonner';
 import {
     ProfileHeader,
@@ -443,7 +443,7 @@ const ProjectCard = ({ project, viewMode }) => {
                 {/* Thumbnail */}
                 <div className="w-16 h-16 rounded-md bg-muted flex-shrink-0 overflow-hidden">
                     {project.thumbnail_url ? (
-                        <img src={project.thumbnail_url} alt="" className="w-full h-full object-cover" />
+                        <img src={resolveMediaUrl(project.thumbnail_url)} alt="" className="w-full h-full object-cover" />
                     ) : (
                         <div className="w-full h-full flex items-center justify-center">
                             <Code2 className="w-6 h-6 text-muted-foreground/50" />
@@ -481,7 +481,7 @@ const ProjectCard = ({ project, viewMode }) => {
             <div className="aspect-video bg-muted relative overflow-hidden">
                 {project.thumbnail_url ? (
                     <img
-                        src={project.thumbnail_url}
+                        src={resolveMediaUrl(project.thumbnail_url)}
                         alt={project.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
