@@ -2,157 +2,236 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import { BookOpen, Moon, Sun, Plus } from 'lucide-react';
+import { Moon, Sun, Plus } from 'lucide-react';
 import { ProfileDropdown } from '../profile/ProfileDropdown';
+
+/* ── Liquid Glass Header ─────────────────────────────────────────────────── */
+
+const navLinkBase = {
+    fontFamily: "'Inter', sans-serif",
+    fontWeight: '500',
+    fontSize: '14px',
+    padding: '6px 13px',
+    borderRadius: '10px',
+    textDecoration: 'none',
+    transition: 'background 0.18s, color 0.18s',
+    cursor: 'pointer',
+    border: 'none',
+    background: 'transparent',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '5px',
+};
+
+function NavLink({ to, children, style }) {
+    const [hovered, setHovered] = React.useState(false);
+    const { theme } = useTheme();
+    const isDark = theme === 'dark';
+    return (
+        <Link
+            to={to}
+            style={{
+                ...navLinkBase,
+                color: hovered ? (isDark ? '#fff' : '#0a0a0a') : (isDark ? 'rgba(255,255,255,0.75)' : '#374151'),
+                background: hovered ? (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)') : 'transparent',
+                ...style,
+            }}
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+        >
+            {children}
+        </Link>
+    );
+}
+
+function PrimaryBtn({ to, children }) {
+    const [hovered, setHovered] = React.useState(false);
+    return (
+        <Link
+            to={to}
+            style={{
+                ...navLinkBase,
+                background: hovered ? 'rgba(0,132,255,0.95)' : 'rgba(0,132,255,0.82)',
+                color: '#ffffff',
+                fontWeight: '600',
+                padding: '7px 15px',
+                borderRadius: '11px',
+                border: '1px solid rgba(255,255,255,0.18)',
+                boxShadow: 'inset 0px 3px 4px 0px rgba(255,255,255,0.30), 0 4px 16px rgba(0,132,255,0.22)',
+                transform: hovered ? 'scale(1.02)' : 'scale(1)',
+                transition: 'all 0.18s ease',
+            }}
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+        >
+            {children}
+        </Link>
+    );
+}
 
 export const Header = () => {
     const { isAuthenticated, user, logout } = useAuth();
     const { theme, toggleTheme } = useTheme();
     const navigate = useNavigate();
+    const isDark = theme === 'dark';
 
     const handleLogout = () => {
         logout();
         navigate('/');
     };
 
+    const headerStyle = {
+        position: 'sticky',
+        top: 0,
+        zIndex: 100,
+        width: '100%',
+        backdropFilter: 'blur(40px)',
+        WebkitBackdropFilter: 'blur(40px)',
+        background: isDark
+            ? 'rgba(15,23,42,0.70)'
+            : 'rgba(255,255,255,0.72)',
+        borderBottom: isDark
+            ? '1px solid rgba(255,255,255,0.08)'
+            : '1px solid rgba(0,0,0,0.08)',
+        boxShadow: isDark
+            ? 'inset 0px 1px 0px rgba(255,255,255,0.06), 0 4px 24px rgba(0,0,0,0.18)'
+            : 'inset 0px 1px 0px rgba(255,255,255,0.80), 0 4px 24px rgba(0,0,0,0.05)',
+        transition: 'background 0.3s, border-color 0.3s, box-shadow 0.3s',
+    };
+
+    const logoStyle = {
+        fontFamily: "'Fustat', sans-serif",
+        fontWeight: '800',
+        fontSize: '19px',
+        letterSpacing: '-0.5px',
+        color: isDark ? '#ffffff' : '#0a0a0a',
+        textDecoration: 'none',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+    };
+
+    const iconBg = {
+        width: '30px',
+        height: '30px',
+        borderRadius: '8px',
+        background: 'linear-gradient(135deg, rgba(0,132,255,0.9), rgba(49,154,255,0.8))',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        boxShadow: 'inset 0px 2px 3px rgba(255,255,255,0.30)',
+        flexShrink: 0,
+    };
+
+    const themeToggleStyle = {
+        width: '34px',
+        height: '34px',
+        borderRadius: '10px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)',
+        border: isDark ? '1px solid rgba(255,255,255,0.10)' : '1px solid rgba(0,0,0,0.07)',
+        color: isDark ? 'rgba(255,255,255,0.75)' : '#374151',
+        cursor: 'pointer',
+        transition: 'all 0.18s',
+        flexShrink: 0,
+    };
+
     return (
-        <header className="border-b border-border bg-card transition-colors duration-300">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between items-center h-16">
-                    {/* Logo */}
-                    <Link to="/" className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-primary rounded flex items-center justify-center">
-                            <BookOpen className="w-5 h-5 text-primary-foreground" />
-                        </div>
-                        <span className="font-heading font-bold text-xl text-foreground">
-                            KudosDev
-                        </span>
-                    </Link>
+        <header style={headerStyle}>
+            <div style={{
+                maxWidth: '1400px',
+                margin: '0 auto',
+                padding: '0 28px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                height: '60px',
+            }}>
+                {/* Logo */}
+                <Link to="/" style={logoStyle}>
+                    <div style={iconBg}>
+                        {/* K icon */}
+                        <svg viewBox="0 0 18 18" width="16" height="16" fill="white">
+                            <path d="M3 2h2.5v5.5l5-5.5H13L8 7.8 13.5 16H10.7L6.5 9.5l-1 1V16H3V2z"/>
+                        </svg>
+                    </div>
+                    KudosD
+                </Link>
 
-                    {/* Navigation */}
-                    <nav className="flex items-center gap-1 sm:gap-2">
-                        {isAuthenticated ? (
-                            <>
-                                {/* Publish Project - Primary CTA */}
-                                <Link
-                                    to="/publish"
-                                    className="
-                                        inline-flex items-center gap-1.5 
-                                        bg-accent text-accent-foreground 
-                                        hover:bg-accent/90 
-                                        px-3 py-1.5 rounded-md 
-                                        text-sm font-medium 
-                                        transition-all active:scale-95
-                                        shadow-sm
-                                    "
-                                >
-                                    <Plus className="w-4 h-4" />
-                                    <span className="hidden sm:inline">Publish Project</span>
-                                    <span className="sm:hidden">Publish</span>
-                                </Link>
+                {/* Navigation */}
+                <nav style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                    {isAuthenticated ? (
+                        <>
+                            {/* Publish Project - Primary CTA */}
+                            <Link
+                                to="/publish"
+                                style={{
+                                    ...navLinkBase,
+                                    background: 'rgba(0,132,255,0.82)',
+                                    color: '#ffffff',
+                                    fontWeight: '600',
+                                    padding: '7px 14px',
+                                    borderRadius: '11px',
+                                    border: '1px solid rgba(255,255,255,0.18)',
+                                    boxShadow: 'inset 0px 3px 4px 0px rgba(255,255,255,0.30)',
+                                    marginRight: '2px',
+                                }}
+                            >
+                                <Plus style={{ width: '15px', height: '15px' }} />
+                                <span className="hidden sm:inline">Publish Project</span>
+                                <span className="sm:hidden">Publish</span>
+                            </Link>
 
-                                {/* My Projects */}
-                                <Link
-                                    to="/dashboard"
-                                    className="text-sm text-foreground hover:text-accent transition-colors px-3 py-2 rounded-md hover:bg-muted"
-                                >
-                                    <span className="hidden sm:inline">My Projects</span>
-                                    <span className="sm:hidden">Projects</span>
-                                </Link>
+                            <NavLink to="/dashboard">
+                                <span className="hidden sm:inline">My Projects</span>
+                                <span className="sm:hidden">Projects</span>
+                            </NavLink>
+                            <NavLink to="/dashboard/blogs">
+                                <span className="hidden sm:inline">My Blogs</span>
+                                <span className="sm:hidden">Blogs</span>
+                            </NavLink>
+                            <NavLink to="/explore">Explore</NavLink>
+                            <NavLink to="/contribute">Contribute</NavLink>
 
-                                {/* My Blogs */}
-                                <Link
-                                    to="/dashboard/blogs"
-                                    className="text-sm text-foreground hover:text-accent transition-colors px-3 py-2 rounded-md hover:bg-muted"
-                                >
-                                    <span className="hidden sm:inline">My Blogs</span>
-                                    <span className="sm:hidden">Blogs</span>
-                                </Link>
+                            {/* Theme Toggle */}
+                            <button
+                                onClick={toggleTheme}
+                                style={themeToggleStyle}
+                                aria-label="Toggle theme"
+                            >
+                                {theme === 'light'
+                                    ? <Moon style={{ width: '16px', height: '16px' }} />
+                                    : <Sun style={{ width: '16px', height: '16px' }} />
+                                }
+                            </button>
 
-                                {/* Explore */}
-                                <Link
-                                    to="/explore"
-                                    className="text-sm text-foreground hover:text-accent transition-colors px-3 py-2 rounded-md hover:bg-muted"
-                                >
-                                    Explore
-                                </Link>
+                            {/* Profile Dropdown */}
+                            <ProfileDropdown user={user} onLogout={handleLogout} />
+                        </>
+                    ) : (
+                        <>
+                            <NavLink to="/explore">Explore</NavLink>
+                            <NavLink to="/contribute">Contribute</NavLink>
 
+                            {/* Theme Toggle */}
+                            <button
+                                onClick={toggleTheme}
+                                style={{ ...themeToggleStyle, margin: '0 4px' }}
+                                aria-label="Toggle theme"
+                            >
+                                {theme === 'light'
+                                    ? <Moon style={{ width: '16px', height: '16px' }} />
+                                    : <Sun style={{ width: '16px', height: '16px' }} />
+                                }
+                            </button>
 
-                                {/* Contribute */}
-                                <Link
-                                    to="/contribute"
-                                    className="text-sm text-foreground hover:text-accent transition-colors px-3 py-2 rounded-md hover:bg-muted"
-                                >
-                                    Contribute
-                                </Link>
-
-                                {/* Theme Toggle */}
-                                <button
-                                    onClick={toggleTheme}
-                                    className="p-2 rounded-md hover:bg-muted transition-colors text-foreground"
-                                    aria-label="Toggle theme"
-                                >
-                                    {theme === 'light' ? (
-                                        <Moon className="w-5 h-5" />
-                                    ) : (
-                                        <Sun className="w-5 h-5" />
-                                    )}
-                                </button>
-
-                                {/* Profile Dropdown */}
-                                <ProfileDropdown user={user} onLogout={handleLogout} />
-                            </>
-                        ) : (
-                            <>
-                                {/* Explore - visible to everyone */}
-                                <Link
-                                    to="/explore"
-                                    className="text-sm text-foreground hover:text-accent transition-colors px-3 py-2 rounded-md hover:bg-muted"
-                                >
-                                    Explore
-                                </Link>
-
-
-                                {/* Contribute - visible to everyone */}
-                                <Link
-                                    to="/contribute"
-                                    className="text-sm text-foreground hover:text-accent transition-colors px-3 py-2 rounded-md hover:bg-muted"
-                                >
-                                    Contribute
-                                </Link>
-
-                                {/* Theme Toggle */}
-                                <button
-                                    onClick={toggleTheme}
-                                    className="p-2 rounded-md hover:bg-muted transition-colors text-foreground"
-                                    aria-label="Toggle theme"
-                                >
-                                    {theme === 'light' ? (
-                                        <Moon className="w-5 h-5" />
-                                    ) : (
-                                        <Sun className="w-5 h-5" />
-                                    )}
-                                </button>
-
-                                {/* Login */}
-                                <Link
-                                    to="/login"
-                                    className="text-sm text-foreground hover:text-accent transition-colors px-3 py-2 rounded-md hover:bg-muted"
-                                >
-                                    Login
-                                </Link>
-
-                                {/* Sign Up */}
-                                <Link
-                                    to="/register"
-                                    className="text-sm bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md font-medium transition-all"
-                                >
-                                    Sign up
-                                </Link>
-                            </>
-                        )}
-                    </nav>
-                </div>
+                            <NavLink to="/login" style={{ marginLeft: '2px' }}>Login</NavLink>
+                            <PrimaryBtn to="/register">Sign up ↗</PrimaryBtn>
+                        </>
+                    )}
+                </nav>
             </div>
         </header>
     );
