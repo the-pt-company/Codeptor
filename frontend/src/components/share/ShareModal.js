@@ -90,50 +90,64 @@ export default function ShareModal({ isOpen, onClose, url, title, description, t
                         animate="visible"
                         exit="exit"
                     >
-                        {/* Gradient strip */}
-                        <div className="h-1 w-full bg-gradient-to-r from-blue-500 via-violet-500 to-pink-500" />
+                        {/* Gradient strip based on type */}
+                        <div className={`h-1.5 w-full bg-gradient-to-r ${type === 'profile'
+                            ? 'from-pink-500 via-rose-500 to-orange-400'
+                            : 'from-blue-600 via-indigo-600 to-violet-500'}`} />
 
-                        <div className="p-6">
+                        <div className="p-7">
                             {/* Header */}
-                            <div className="flex items-center justify-between mb-6">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center shadow-lg shadow-blue-200">
-                                        <Share2 className="w-5 h-5 text-white" />
+                            <div className="flex items-center justify-between mb-8">
+                                <div className="flex items-center gap-4">
+                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg transition-transform group-hover:scale-110 ${type === 'profile'
+                                        ? 'bg-gradient-to-br from-pink-500 to-rose-600 shadow-rose-200'
+                                        : 'bg-gradient-to-br from-blue-500 to-indigo-600 shadow-blue-200'}`}>
+                                        {type === 'profile' ? <Sparkles className="w-6 h-6 text-white" /> : <Globe className="w-6 h-6 text-white" />}
                                     </div>
                                     <div>
-                                        <h3 className="font-bold text-gray-900 text-base">Share {type === 'profile' ? 'Profile' : 'Project'}</h3>
-                                        <p className="text-xs text-gray-500">Spread the word</p>
+                                        <h3 className="font-extrabold text-gray-900 text-lg tracking-tight">Share {type === 'profile' ? 'Profile' : 'Project'}</h3>
+                                        <p className="text-xs font-medium text-gray-400 uppercase tracking-widest">{type === 'profile' ? 'Your identity' : 'Your creation'}</p>
                                     </div>
                                 </div>
                                 <button
                                     onClick={onClose}
-                                    className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+                                    className="w-10 h-10 rounded-full bg-gray-50 hover:bg-gray-100 flex items-center justify-center transition-all hover:rotate-90"
                                 >
-                                    <X className="w-4 h-4 text-gray-500" />
+                                    <X className="w-5 h-5 text-gray-400" />
                                 </button>
                             </div>
 
-                            {/* Designer Card CTA */}
+                            {/* Designer Card CTA - High Impact */}
                             {onGenerateCard && (
                                 <motion.button
                                     onClick={() => {
                                         onClose();
                                         onGenerateCard();
                                     }}
-                                    className="w-full relative group mb-6 overflow-hidden rounded-2xl p-4 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                                    whileHover={{ y: -2 }}
+                                    className="w-full relative group mb-8 overflow-hidden rounded-[2rem] p-6 transition-all"
+                                    whileHover={{ y: -4, scale: 1.01 }}
+                                    whileTap={{ scale: 0.98 }}
                                 >
                                     {/* Animated background */}
-                                    <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-violet-600 to-pink-600 opacity-90 transition-opacity group-hover:opacity-100" />
-                                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(255,255,255,0.2),transparent)]" />
+                                    <div className={`absolute inset-0 bg-gradient-to-br transition-all duration-500 ${type === 'profile'
+                                        ? 'from-rose-600 via-pink-600 to-orange-500 group-hover:from-rose-500 group-hover:via-pink-500 group-hover:to-orange-400'
+                                        : 'from-blue-700 via-indigo-700 to-violet-600 group-hover:from-blue-600 group-hover:via-indigo-600 group-hover:to-violet-500'}`} />
                                     
-                                    <div className="relative flex items-center gap-4 text-white">
-                                        <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 rotate-3 group-hover:rotate-0 transition-transform">
-                                            <Sparkles className="w-6 h-6" />
+                                    <div className="absolute top-0 right-0 -mr-12 -mt-12 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-700" />
+                                    <div className="absolute bottom-0 left-0 -ml-12 -mb-12 w-32 h-32 bg-black/10 rounded-full blur-2xl" />
+                                    
+                                    <div className="relative flex items-center justify-between">
+                                        <div className="flex items-center gap-5 text-white">
+                                            <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-xl flex items-center justify-center border border-white/30 rotate-6 group-hover:rotate-0 transition-all duration-500 shadow-xl shadow-black/10">
+                                                <Sparkles className="w-7 h-7 text-white" />
+                                            </div>
+                                            <div className="text-left">
+                                                <p className="font-black text-base uppercase tracking-wider mb-0.5">Designer Card</p>
+                                                <p className="text-sm text-white/80 font-medium italic">Ready for social media</p>
+                                            </div>
                                         </div>
-                                        <div className="text-left">
-                                            <p className="font-black text-sm uppercase tracking-wide">Generate Designer Card</p>
-                                            <p className="text-xs text-white/70">Create a beautiful shareable PNG</p>
+                                        <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 -mr-1 group-hover:translate-x-1 transition-transform">
+                                            <Share2 className="w-5 h-5 text-white" />
                                         </div>
                                     </div>
                                 </motion.button>

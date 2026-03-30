@@ -10,12 +10,58 @@ import { resolveMediaUrl } from '../../lib/api';
 
 // ─── Card Variant Definitions ──────────────────────────────────────────────────
 const CARD_VARIANTS = [
-    { id: 'glass', label: 'Glass', emoji: '💎' },
-    { id: 'neon', label: 'Neon', emoji: '⚡' },
-    { id: 'minimal', label: 'Minimal', emoji: '🎯' },
+    { id: 'spectrum', label: 'Spectrum', types: ['profile'] },
+    { id: 'glass', label: 'Glass', types: ['profile'] },
+    { id: 'neon', label: 'Neon', types: ['profile'] },
+    { id: 'minimal', label: 'Minimal', types: ['profile', 'project'] },
+    { id: 'sleek', label: 'Sleek', types: ['project'] },
+    { id: 'glitch', label: 'Glitch', types: ['project'] },
 ];
 
 // ─── Individual Card Styles ────────────────────────────────────────────────────
+const SpectrumCard = ({ user, stats }) => (
+    <div
+        style={{
+            width: 480, height: 280,
+            background: 'linear-gradient(135deg, #FF0080 0%, #7928CA 50%, #FF8A00 100%)',
+            borderRadius: 24, padding: 36, fontFamily: 'system-ui, sans-serif',
+            position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+        }}
+    >
+        <div style={{ position: 'absolute', inset: 0, opacity: 0.2, mixBlendMode: 'overlay', backgroundImage: 'radial-gradient(circle at 20% 20%, white 0%, transparent 50%), radial-gradient(circle at 80% 80%, white 0%, transparent 50%)' }} />
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: 20, position: 'relative' }}>
+            <div style={{ width: 80, height: 80, borderRadius: 28, background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(12px)', border: '2px solid white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36, fontWeight: 900, color: 'white', shadow: '0 10px 40px rgba(0,0,0,0.2)' }}>
+                {user?.full_name?.[0] || user?.username?.[0] || 'D'}
+            </div>
+            <div>
+                <div style={{ fontSize: 28, fontWeight: 900, color: 'white', lineHeight: 1, textShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>{user?.full_name || user?.username}</div>
+                <div style={{ fontSize: 16, color: 'rgba(255,255,255,0.9)', marginTop: 4, fontWeight: 600 }}>@{user?.username}</div>
+            </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: 12, position: 'relative' }}>
+            {[
+                { label: 'PROJECTS', value: stats?.projects || 0 },
+                { label: 'BLOGS', value: stats?.blogPosts || 0 },
+                { label: 'NETWORK', value: stats?.followers || 0 },
+            ].map(s => (
+                <div key={s.label} style={{ flex: 1, background: 'rgba(0,0,0,0.15)', borderRadius: 16, padding: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                    <div style={{ fontSize: 20, fontWeight: 900, color: 'white' }}>{s.value}</div>
+                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', marginTop: 2, fontWeight: 800, letterSpacing: 0.5 }}>{s.label}</div>
+                </div>
+            ))}
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: 'white', background: 'rgba(0,0,0,0.2)', padding: '6px 16px', borderRadius: 100, border: '1px solid rgba(255,255,255,0.2)' }}>
+                Expert Developer
+            </div>
+            <div style={{ fontSize: 14, color: 'white', fontWeight: 900, letterSpacing: -0.5, opacity: 0.8 }}>KudosD</div>
+        </div>
+    </div>
+);
+
 const GlassCard = ({ user, stats }) => (
     <div
         style={{
@@ -123,7 +169,88 @@ const NeonCard = ({ user, stats }) => (
     </div>
 );
 
-const MinimalCard = ({ user, stats }) => (
+const SleekProjectCard = ({ project }) => (
+    <div
+        style={{
+            width: 480, height: 280,
+            background: '#0a0a0f',
+            borderRadius: 24, padding: 36, fontFamily: 'system-ui, sans-serif',
+            position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+            border: '1px solid #1e1e2d',
+        }}
+    >
+        <div style={{ position: 'absolute', top: 0, right: 0, width: '100%', height: '100%', background: 'linear-gradient(45deg, transparent 60%, rgba(99,102,241,0.05) 100%)' }} />
+        
+        <div style={{ display: 'flex', gap: 24, position: 'relative' }}>
+            <div style={{ width: 140, height: 80, borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', background: '#16161e', boxShadow: '0 8px 30px rgba(0,0,0,0.3)' }}>
+                {project?.thumbnail_url ? (
+                    <img src={resolveMediaUrl(project.thumbnail_url)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
+                ) : (
+                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6366f1', fontSize: 32 }}>⚡</div>
+                )}
+            </div>
+            <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 22, fontWeight: 900, color: 'white', letterSpacing: -0.5, lineHeight: 1.1 }}>{project?.title}</div>
+                <div style={{ display: 'inline-block', fontSize: 10, background: '#6366f1', color: 'white', padding: '2px 8px', borderRadius: 4, marginTop: 8, fontWeight: 900, textTransform: 'uppercase' }}>{project?.category}</div>
+            </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', position: 'relative' }}>
+            {project?.tech_stack?.slice(0, 4).map(tech => (
+                <span key={tech} style={{ background: '#16161e', color: '#94a3b8', borderRadius: 8, padding: '5px 12px', fontSize: 11, fontWeight: 700, border: '1px solid #1e1e2d shadow-sm' }}>{tech}</span>
+            ))}
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 20, borderTop: '1px solid #1e1e2d', position: 'relative' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: '#f8fafc' }}>{project?.user_username}</div>
+            </div>
+            <div style={{ fontSize: 14, color: '#6366f1', fontWeight: 900, letterSpacing: -0.5 }}>KudosDev</div>
+        </div>
+    </div>
+);
+
+const GlitchProjectCard = ({ project }) => (
+    <div
+        style={{
+            width: 480, height: 280,
+            background: '#ffffff',
+            borderRadius: 24, padding: 36, fontFamily: 'system-ui, sans-serif',
+            position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+            border: '2px solid #000',
+        }}
+    >
+        <div style={{ position: 'absolute', top: 12, right: 12, width: 24, height: 24, background: '#0ff', zIndex: 0 }} />
+        <div style={{ position: 'absolute', bottom: 12, left: 12, width: 24, height: 24, background: '#f0f', zIndex: 0 }} />
+        
+        <div style={{ position: 'relative' }}>
+            <div style={{ background: '#000', color: '#fff', display: 'inline-block', padding: '4px 12px', fontSize: 12, fontWeight: 900, marginBottom: 12, transform: 'skewX(-10deg)' }}>
+                FEATURED PROJECT
+            </div>
+            <h2 style={{ fontSize: 32, fontWeight: 1000, color: '#000', lineHeight: 1, letterSpacing: -1, textTransform: 'uppercase' }}>
+                {project?.title}
+            </h2>
+        </div>
+
+        <div style={{ display: 'flex', gap: 8, position: 'relative' }}>
+            {project?.tech_stack?.slice(0, 5).map(tech => (
+                <div key={tech} style={{ border: '2px solid #000', padding: '4px 10px', fontSize: 12, fontWeight: 900, background: '#fff' }}>
+                    {tech}
+                </div>
+            ))}
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', position: 'relative' }}>
+            <div>
+                <div style={{ fontSize: 11, fontWeight: 900, color: '#666', textTransform: 'uppercase' }}>Built by</div>
+                <div style={{ fontSize: 18, fontWeight: 1000, color: '#000' }}>@{project?.user_username}</div>
+            </div>
+            <div style={{ fontSize: 18, color: '#000', fontWeight: 1000, letterSpacing: -1 }}>KUDOSDEV.</div>
+        </div>
+    </div>
+);
+
+const MinimalCard = ({ user, stats, project, type }) => (
     <div
         style={{
             width: 480, height: 280,
@@ -136,45 +263,63 @@ const MinimalCard = ({ user, stats }) => (
         {/* Accent bar */}
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 4, background: 'linear-gradient(90deg, #6366f1, #8b5cf6, #ec4899)' }} />
 
-        {/* Avatar */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, position: 'relative' }}>
-            <div style={{ width: 64, height: 64, borderRadius: 18, background: 'linear-gradient(135deg, #ede9fe, #ddd6fe)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, fontWeight: 900, color: '#6366f1' }}>
-                {user?.full_name?.[0] || user?.username?.[0] || 'D'}
-            </div>
-            <div>
-                <div style={{ fontSize: 22, fontWeight: 800, color: '#0f172a', lineHeight: 1.2 }}>{user?.full_name || user?.username}</div>
-                <div style={{ fontSize: 13, color: '#6366f1', marginTop: 2, fontWeight: 600 }}>@{user?.username}</div>
-                {user?.bio && <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>{user.bio?.slice(0, 70)}{user.bio?.length > 70 ? '...' : ''}</div>}
-            </div>
-        </div>
-
-        {/* Stats */}
-        <div style={{ display: 'flex', gap: 0, border: '1px solid #e2e8f0', borderRadius: 16, overflow: 'hidden' }}>
-            {[
-                { label: 'Projects', value: stats?.projects || 0 },
-                { label: 'Blogs', value: stats?.blogPosts || 0 },
-                { label: 'Followers', value: stats?.followers || 0 },
-            ].map((s, i) => (
-                <div key={s.label} style={{ flex: 1, padding: '12px 14px', borderRight: i < 2 ? '1px solid #e2e8f0' : 'none', background: i % 2 === 0 ? '#f8fafc' : 'white' }}>
-                    <div style={{ fontSize: 20, fontWeight: 900, color: '#0f172a' }}>{s.value}</div>
-                    <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2, fontWeight: 600 }}>{s.label}</div>
+        {/* Header Section */}
+        {type === 'profile' ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, position: 'relative' }}>
+                <div style={{ width: 64, height: 64, borderRadius: 18, background: 'linear-gradient(135deg, #ede9fe, #ddd6fe)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, fontWeight: 900, color: '#6366f1' }}>
+                    {user?.full_name?.[0] || user?.username?.[0] || 'D'}
                 </div>
-            ))}
-        </div>
+                <div>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: '#0f172a', lineHeight: 1.2 }}>{user?.full_name || user?.username}</div>
+                    <div style={{ fontSize: 13, color: '#6366f1', marginTop: 2, fontWeight: 600 }}>@{user?.username}</div>
+                </div>
+            </div>
+        ) : (
+            <div style={{ position: 'relative' }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: '#6366f1', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>{project?.category}</div>
+                <div style={{ fontSize: 24, fontWeight: 800, color: '#0f172a', lineHeight: 1.1 }}>{project?.title}</div>
+            </div>
+        )}
 
-        {/* Skills + branding */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ display: 'flex', gap: 6 }}>
-                {user?.skills?.slice(0, 3).map(s => (
-                    <span key={s} style={{ background: '#f1f5f9', color: '#475569', borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 600 }}>{s}</span>
+        {/* Content Section */}
+        {type === 'profile' ? (
+            <div style={{ display: 'flex', gap: 0, border: '1px solid #e2e8f0', borderRadius: 16, overflow: 'hidden' }}>
+                {[
+                    { label: 'Projects', value: stats?.projects || 0 },
+                    { label: 'Blogs', value: stats?.blogPosts || 0 },
+                    { label: 'Followers', value: stats?.followers || 0 },
+                ].map((s, i) => (
+                    <div key={s.label} style={{ flex: 1, padding: '12px 14px', borderRight: i < 2 ? '1px solid #e2e8f0' : 'none', background: i % 2 === 0 ? '#f8fafc' : 'white' }}>
+                        <div style={{ fontSize: 20, fontWeight: 900, color: '#0f172a' }}>{s.value}</div>
+                        <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2, fontWeight: 600 }}>{s.label}</div>
+                    </div>
                 ))}
             </div>
+        ) : (
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {project?.tech_stack?.slice(0, 6).map(tech => (
+                    <span key={tech} style={{ color: '#64748b', fontSize: 12, fontWeight: 600 }}>#{tech}</span>
+                ))}
+            </div>
+        )}
+
+        {/* Footer */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            {type === 'profile' ? (
+                <div style={{ display: 'flex', gap: 6 }}>
+                    {user?.skills?.slice(0, 3).map(s => (
+                        <span key={s} style={{ background: '#f1f5f9', color: '#475569', borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 600 }}>{s}</span>
+                    ))}
+                </div>
+            ) : (
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#64748b' }}>by @{project?.user_username}</div>
+            )}
             <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 700 }}>KudosDev</div>
         </div>
     </div>
 );
 
-const ProjectCard = ({ project }) => (
+const IndustrialProjectCard = ({ project }) => (
     <div
         style={{
             width: 480, height: 280,
@@ -190,7 +335,7 @@ const ProjectCard = ({ project }) => (
         <div style={{ display: 'flex', gap: 20, position: 'relative' }}>
             <div style={{ width: 120, height: 70, borderRadius: 12, overflow: 'hidden', border: '2px solid rgba(255,255,255,0.15)', background: '#1e293b' }}>
                 {project?.thumbnail_url ? (
-                    <img src={resolveMediaUrl(project.thumbnail_url)} style={{ width: '100%', height: '100%', objectCover: 'cover' }} alt="" />
+                    <img src={resolveMediaUrl(project.thumbnail_url)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
                 ) : (
                     <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.2)' }}>📦</div>
                 )}
@@ -223,7 +368,15 @@ const ProjectCard = ({ project }) => (
 );
 
 // ─── Card Renderer Map ─────────────────────────────────────────────────────────
-const CARD_MAP = { glass: GlassCard, neon: NeonCard, minimal: MinimalCard, project: ProjectCard };
+const CARD_MAP = { 
+    spectrum: SpectrumCard,
+    glass: GlassCard, 
+    neon: NeonCard, 
+    minimal: MinimalCard, 
+    sleek: SleekProjectCard,
+    glitch: GlitchProjectCard,
+    industrial: IndustrialProjectCard 
+};
 
 // ─── Main Modal ────────────────────────────────────────────────────────────────
 const OVERLAY = { hidden: { opacity: 0 }, visible: { opacity: 1 }, exit: { opacity: 0 } };
@@ -235,7 +388,7 @@ const MODAL = {
 
 
 export default function ShareCardModal({ isOpen, onClose, user, stats, project, type = 'profile' }) {
-    const [variant, setVariant] = useState(type === 'project' ? 'project' : 'glass');
+    const [variant, setVariant] = useState(type === 'project' ? 'sleek' : 'spectrum');
     const [exporting, setExporting] = useState(false);
     const [copied, setCopied] = useState(false);
     const cardRef = useRef(null);
@@ -315,24 +468,23 @@ export default function ShareCardModal({ isOpen, onClose, user, stats, project, 
                                 </button>
                             </div>
 
-                            {/* Style Switcher - Only for Profile now, Project has one style */}
-                            {type === 'profile' && (
-                                <div className="flex gap-2 mb-5">
-                                    {CARD_VARIANTS.map(v => (
-                                        <motion.button
-                                            key={v.id}
-                                            onClick={() => setVariant(v.id)}
-                                            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold border-2 transition-all ${variant === v.id
-                                                ? 'border-violet-500 bg-violet-50 text-violet-700'
-                                                : 'border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300'}`}
-                                            whileTap={{ scale: 0.95 }}
-                                        >
-                                            <span>{v.emoji}</span>
-                                            {v.label}
-                                        </motion.button>
-                                    ))}
-                                </div>
-                            )}
+                            {/* Style Switcher */}
+                            <div className="flex gap-2 mb-6 overflow-x-auto pb-2 no-scrollbar">
+                                {CARD_VARIANTS.filter(v => v.types.includes(type)).map(v => (
+                                    <motion.button
+                                        key={v.id}
+                                        onClick={() => setVariant(v.id)}
+                                        className={`flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-bold border-2 transition-all shadow-sm ${variant === v.id
+                                            ? 'border-violet-500 bg-violet-50 text-violet-700'
+                                            : 'border-gray-100 bg-gray-50 text-gray-500 hover:border-gray-200 hover:text-gray-700'}`}
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                    >
+                                        <span>{v.emoji}</span>
+                                        {v.label}
+                                    </motion.button>
+                                ))}
+                            </div>
 
                             {/* Card Preview */}
                             <motion.div
@@ -344,9 +496,9 @@ export default function ShareCardModal({ isOpen, onClose, user, stats, project, 
                             >
                                 <div
                                     ref={cardRef}
-                                    style={{ transform: 'scale(0.7)', transformOrigin: 'top center', marginBottom: -80 }}
+                                    style={{ transform: 'scale(0.7)', transformOrigin: 'top center', marginBottom: -85 }}
                                 >
-                                    <CardComponent user={user} stats={stats} project={project} />
+                                    <CardComponent user={user} stats={stats} project={project} type={type} />
                                 </div>
                             </motion.div>
 
