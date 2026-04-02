@@ -164,9 +164,9 @@ Check the detailed guide: [FORGOT_PASSWORD_SETUP.md](FORGOT_PASSWORD_SETUP.md)
 
 Look for these log messages to diagnose:
 ```
-✅ SMTP configured: ...        (Good - emails should work)
-❌ SMTP not configured         (Fix: Add SMTP to .env)
-❌ Failed to send reset email  (Check Gmail app password)
+SMTP configured: ...        (Good - emails should work)
+SMTP not configured         (Fix: Add SMTP to .env)
+Failed to send reset email  (Check Gmail app password)
 ```
 
 Good luck! 🎉
