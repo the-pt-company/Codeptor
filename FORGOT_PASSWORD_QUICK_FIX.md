@@ -129,7 +129,7 @@ Watch backend console for email send confirmation or errors.
 
 ---
 
-## 📊 Detection: Is It Working?
+## Detection: Is It Working?
 
 ### Working
 - User gets reset email within seconds
