@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BookOpen, Github, Linkedin, Mail, ArrowUp } from 'lucide-react';
+import { Github, Linkedin, Mail, ArrowUp } from 'lucide-react';
 import { toast } from 'sonner';
+import { BrandLogo } from './BrandLogo';
 
 export const Footer = () => {
     const [newsletterEmail, setNewsletterEmail] = useState('');
@@ -35,8 +36,8 @@ export const Footer = () => {
                     {/* Brand Section */}
                     <div className="space-y-6">
                         <Link to="/" className="flex items-center gap-2 group">
-                            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center group-hover:rotate-6 transition-transform">
-                                <BookOpen className="w-6 h-6 text-primary-foreground" />
+                            <div className="w-10 h-10 bg-white rounded-lg border border-border flex items-center justify-center group-hover:rotate-6 transition-transform">
+                                <BrandLogo size={28} color="#111111" />
                             </div>
                             <span className="font-heading font-bold text-2xl text-foreground tracking-tight">
                                 KudosDev

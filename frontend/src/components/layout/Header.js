@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Plus } from 'lucide-react';
 import { ProfileDropdown } from '../profile/ProfileDropdown';
+import { BrandLogo } from './BrandLogo';
 
 /* ── Liquid Glass Header ─────────────────────────────────────────────────── */
 
@@ -104,11 +105,11 @@ export const Header = () => {
         width: '30px',
         height: '30px',
         borderRadius: '8px',
-        background: 'linear-gradient(135deg, rgba(0,132,255,0.9), rgba(49,154,255,0.8))',
+        background: '#ffffff',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        boxShadow: 'inset 0px 2px 3px rgba(255,255,255,0.30)',
+        border: '1px solid rgba(0,0,0,0.08)',
         flexShrink: 0,
     };
 
@@ -130,10 +131,7 @@ export const Header = () => {
                 {/* Logo */}
                 <Link to="/" style={logoStyle}>
                     <div style={iconBg}>
-                        {/* K icon */}
-                        <svg viewBox="0 0 18 18" width="16" height="16" fill="white">
-                            <path d="M3 2h2.5v5.5l5-5.5H13L8 7.8 13.5 16H10.7L6.5 9.5l-1 1V16H3V2z"/>
-                        </svg>
+                        <BrandLogo size={22} color="#111111" />
                     </div>
                     KudosD
                 </Link>
