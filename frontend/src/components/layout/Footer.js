@@ -79,7 +79,12 @@ export const Footer = () => {
                         </div>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <Mail className="w-3.5 h-3.5" />
-                            <span>support@kudosdev.com</span>
+                            <a
+                                href="mailto:kudosdev7@gmail.com"
+                                className="hover:text-foreground transition-colors"
+                            >
+                                kudosdev7@gmail.com
+                            </a>
                         </div>
                     </div>
                 </div>
