@@ -131,13 +131,13 @@ Watch backend console for email send confirmation or errors.
 
 ## 📊 Detection: Is It Working?
 
-### Working ✅
+### Working
 - User gets reset email within seconds
 - Email contains a valid reset link
 - Clicking link opens reset password page
 - New password works for login
 
-### Broken ❌
+### Broken
 - No email received (check spam too!)
 - Backend console shows "Failed to send"
 - Reset link in logs (if shown) doesn't work
