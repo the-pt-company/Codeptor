@@ -1,10 +1,31 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BookOpen, Github, Linkedin, Mail, ArrowUp } from 'lucide-react';
+import { toast } from 'sonner';
 
 export const Footer = () => {
+    const [newsletterEmail, setNewsletterEmail] = useState('');
+
     const scrollToTop = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const handleNewsletterJoin = () => {
+        const email = newsletterEmail.trim();
+        if (!email) {
+            toast.error('Please enter your email address');
+            return;
+        }
+
+        const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        if (!isValidEmail) {
+            toast.error('Please enter a valid email address');
+            return;
+        }
+
+        window.location.href = `mailto:kudosdev7@gmail.com?subject=${encodeURIComponent('Newsletter Subscription Request')}&body=${encodeURIComponent(`Please add ${email} to the KudosDev newsletter list.`)}`;
+        setNewsletterEmail('');
+        toast.success('Opening your mail app to complete subscription');
     };
 
     return (
@@ -70,10 +91,16 @@ export const Footer = () => {
                         <div className="flex gap-2">
                             <input
                                 type="email"
+                                value={newsletterEmail}
+                                onChange={(e) => setNewsletterEmail(e.target.value)}
                                 placeholder="Email address"
                                 className="flex-1 bg-background border border-input rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                             />
-                            <button className="bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm font-medium hover:bg-primary/90 transition-all">
+                            <button
+                                type="button"
+                                onClick={handleNewsletterJoin}
+                                className="bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm font-medium hover:bg-primary/90 transition-all"
+                            >
                                 Join
                             </button>
                         </div>

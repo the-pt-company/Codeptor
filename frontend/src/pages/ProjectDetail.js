@@ -202,9 +202,12 @@ export default function ProjectDetail() {
         setLikeCount(c => liked ? c - 1 : c + 1);
     };
 
-    // Merge all gallery images
+    const coverImage = project?.thumbnail_url || project?.media_urls?.[0] || null;
     const allImages = project
-        ? [project.thumbnail_url, ...(project.media_urls || [])].filter(Boolean)
+        ? [
+            coverImage,
+            ...(project.media_urls || []).filter((url) => url && url !== coverImage)
+        ].filter(Boolean)
         : [];
 
     if (loading) {
@@ -401,7 +404,7 @@ export default function ProjectDetail() {
                                                 <div className="w-20 h-20 mx-auto rounded-2xl bg-white/10 backdrop-blur-sm flex items-center justify-center mb-4 border border-white/20">
                                                     <Code2 className="w-10 h-10 text-white/60" />
                                                 </div>
-                                                <p className="text-white/40 text-sm font-medium">No screenshots available</p>
+                                                <p className="text-white/40 text-sm font-medium">No project image available</p>
                                             </div>
                                         </div>
                                     )}
@@ -637,12 +640,12 @@ export default function ProjectDetail() {
                                                 {project.status}
                                             </span>
                                         </div>
-                                        {project.media_urls?.length > 0 && (
+                                        {allImages.length > 0 && (
                                             <div className="flex items-center justify-between text-sm">
                                                 <span className="flex items-center gap-2 text-slate-500">
-                                                    <Eye className="w-4 h-4" /> Screenshots
+                                                    <Eye className="w-4 h-4" /> Project Images
                                                 </span>
-                                                <span className="font-semibold text-slate-800">{project.media_urls.length}</span>
+                                                <span className="font-semibold text-slate-800">{allImages.length}</span>
                                             </div>
                                         )}
                                     </div>
