@@ -305,6 +305,7 @@ class ProjectCreate(BaseModel):
     tech_stack: List[str]
     category: str
     status: str = "in_progress"
+    visibility: str = "public"
     thumbnail_url: Optional[str] = None
     live_url: Optional[str] = None
     github_url: str  # Mandatory for contribution
@@ -318,6 +319,7 @@ class ProjectUpdate(BaseModel):
     tech_stack: Optional[List[str]] = None
     category: Optional[str] = None
     status: Optional[str] = None
+    visibility: Optional[str] = None
     thumbnail_url: Optional[str] = None
     live_url: Optional[str] = None
     github_url: Optional[str] = None
@@ -339,6 +341,7 @@ class ProjectResponse(BaseModel):
     tech_stack: List[str]
     category: str
     status: str
+    visibility: str = "public"
     thumbnail_url: Optional[str] = None
     live_url: Optional[str] = None
     github_url: Optional[str] = None
@@ -511,8 +514,19 @@ def _project_response(project: dict) -> ProjectResponse:  # type: ignore
     p["description"] = p.get("description", "")
     p["category"] = p.get("category", "Uncategorized")
     p["status"] = p.get("status", "in_progress")
+    p["visibility"] = p.get("visibility", "public")
     
     return ProjectResponse(**p)
+
+
+def _project_is_owner(project: dict, current_user: Optional[dict]) -> bool:
+    return bool(current_user and project.get("user_email") == current_user.get("email"))
+
+
+def _ensure_project_visible(project: dict, current_user: Optional[dict]) -> None:
+    visibility = project.get("visibility", "public")
+    if visibility == "private" and not _project_is_owner(project, current_user):
+        raise HTTPException(status_code=404, detail="Project not found")
 
 
 def _serialize(doc: dict) -> dict:
@@ -1112,6 +1126,7 @@ async def create_project(project_data: ProjectCreate, current_user: dict = Depen
     project_dict["user_email"] = current_user["email"]
     project_dict["user_username"] = current_user["username"]
     project_dict["user_full_name"] = current_user["full_name"]
+    project_dict["visibility"] = project_dict.get("visibility") or "public"
     project_dict["created_at"] = now
     project_dict["updated_at"] = now
 
@@ -1134,7 +1149,7 @@ async def get_all_projects(
     exclude_self: bool = False,
     current_user: Optional[dict] = Depends(get_optional_user)
 ):
-    query: dict[str, Any] = {}
+    query: dict[str, Any] = {"visibility": "public"}
     if category:
         query["category"] = category
     if status:
@@ -1174,9 +1189,13 @@ async def get_my_projects(current_user: dict = Depends(get_current_user)):
 
 
 @api_router.get("/projects/user/{username}", response_model=List[ProjectResponse])
-async def get_user_projects(username: str):
+async def get_user_projects(username: str, current_user: Optional[dict] = Depends(get_optional_user)):
+    query: dict[str, Any] = {"user_username": username}
+    if not current_user or current_user.get("username") != username:
+        query["visibility"] = "public"
+
     projects = (
-        await db.projects.find({"user_username": username}, {"_id": 0})
+        await db.projects.find(query, {"_id": 0})
         .sort("created_at", -1)
         .to_list(100)
     )
@@ -1184,10 +1203,11 @@ async def get_user_projects(username: str):
 
 
 @api_router.get("/projects/{project_id}", response_model=ProjectResponse)
-async def get_project(project_id: str):
+async def get_project(project_id: str, current_user: Optional[dict] = Depends(get_optional_user)):
     project = await db.projects.find_one({"project_id": project_id}, {"_id": 0})
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
+    _ensure_project_visible(project, current_user)
     return _project_response(project)
 
 
@@ -1244,7 +1264,12 @@ async def delete_project(project_id: str, current_user: dict = Depends(get_curre
 # --- Project Discussion Endpoints ---
 
 @api_router.get("/projects/{project_id}/comments", response_model=List[ProjectCommentResponse])
-async def get_project_comments(project_id: str):
+async def get_project_comments(project_id: str, current_user: Optional[dict] = Depends(get_optional_user)):
+    project = await db.projects.find_one({"project_id": project_id}, {"_id": 0})
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    _ensure_project_visible(project, current_user)
+
     comments = (
         await db.project_comments.find({"project_id": project_id}, {"_id": 0})
         .sort("created_at", -1)
@@ -1262,6 +1287,7 @@ async def add_project_comment(
     project = await db.projects.find_one({"project_id": project_id})
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
+    _ensure_project_visible(project, current_user)
 
     new_comment = {
         "comment_id": str(uuid.uuid4()),
@@ -1481,6 +1507,35 @@ async def upload_blog_image(
         return {"url": file_url}
     except Exception as e:
         logger.error(f"Image upload failed: {e}")
+        raise HTTPException(status_code=500, detail="Failed to upload image")
+
+
+@api_router.post("/projects/upload-image")
+async def upload_project_image(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user)
+):
+    """Upload a thumbnail/screenshot image for a project (max 10 MB)."""
+    ext = os.path.splitext(file.filename or "")[1].lower()
+    if not file.content_type or not file.content_type.startswith("image/") or ext not in ALLOWED_IMAGE_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid file. Allowed image types: {', '.join(sorted(ALLOWED_IMAGE_EXTENSIONS))}",
+        )
+
+    content = b""
+    while chunk := await file.read(1024 * 1024):
+        content += chunk
+        if len(content) > MAX_UPLOAD_BYTES:
+            raise HTTPException(status_code=413, detail="File too large. Maximum size is 10 MB.")
+
+    filename = f"project_{uuid.uuid4()}{ext}"
+    file_path = UPLOAD_DIR / filename
+    try:
+        file_path.write_bytes(content)
+        return {"url": f"/uploads/{filename}", "filename": file.filename}
+    except Exception as e:
+        logger.error(f"Project image upload failed: {e}")
         raise HTTPException(status_code=500, detail="Failed to upload image")
 
 

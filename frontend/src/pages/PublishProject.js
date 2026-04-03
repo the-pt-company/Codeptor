@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ArrowLeft, MoreHorizontal } from 'lucide-react';
 import { Header } from '../components/layout/Header';
@@ -79,10 +79,64 @@ const initialFormData = {
 
 export default function PublishProject() {
     const navigate = useNavigate();
+    const { projectId } = useParams();
+    const isEditMode = Boolean(projectId);
     const [currentStep, setCurrentStep] = useState(1);
     const [formData, setFormData] = useState(initialFormData);
     const [isLoading, setIsLoading] = useState(false);
     const [showVersionForm, setShowVersionForm] = useState(false);
+
+    useEffect(() => {
+        const loadProjectForEdit = async () => {
+            if (!projectId) return;
+
+            setIsLoading(true);
+            try {
+                const response = await projectAPI.getById(projectId);
+                const project = response.data;
+                const [tagline = '', ...descriptionLines] = (project.description || '').split('\n\n');
+
+                setFormData({
+                    ...initialFormData,
+                    title: project.title || '',
+                    tagline,
+                    description: descriptionLines.join('\n\n'),
+                    category: project.category || 'web_app',
+                    tech_stack: project.tech_stack || [],
+                    github_url: project.github_url || '',
+                    live_url: project.live_url || '',
+                    thumbnail: project.thumbnail_url
+                        ? {
+                            id: `existing-thumb-${project.project_id}`,
+                            url: project.thumbnail_url,
+                            name: 'Current thumbnail'
+                        }
+                        : null,
+                    screenshots: (project.media_urls || []).map((url, index) => ({
+                        id: `existing-shot-${index}-${project.project_id}`,
+                        url,
+                        name: `Screenshot ${index + 1}`
+                    })),
+                    documentation_file: null,
+                    documentation_url: project.documentation_url || '',
+                    visibility: project.visibility || 'public',
+                    status:
+                        project.status === 'completed'
+                            ? 'active'
+                            : project.status === 'archived'
+                                ? 'archived'
+                                : 'in_progress',
+                });
+            } catch (error) {
+                toast.error(getErrorMessage(error, 'Failed to load project for editing'));
+                navigate('/dashboard');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        loadProjectForEdit();
+    }, [projectId, navigate]);
 
     // Update form field
     const updateField = (field, value) => {
@@ -155,6 +209,28 @@ export default function PublishProject() {
         setIsLoading(true);
         try {
             let finalDocUrl = formData.documentation_url;
+            let thumbnailUrl = null;
+            let screenshotUrls = [];
+
+            const uploadProjectImage = async (mediaItem) => {
+                if (mediaItem?.url && !mediaItem?.file) return mediaItem.url;
+                if (!mediaItem?.file) return null;
+
+                const imageData = new FormData();
+                imageData.append('file', mediaItem.file);
+                const uploadRes = await projectAPI.uploadImage(imageData);
+                return uploadRes.data.url;
+            };
+
+            if (formData.thumbnail?.file) {
+                thumbnailUrl = await uploadProjectImage(formData.thumbnail);
+            }
+
+            if (formData.screenshots.length > 0) {
+                screenshotUrls = (await Promise.all(
+                    formData.screenshots.map((item) => uploadProjectImage(item))
+                )).filter(Boolean);
+            }
 
             // Upload documentation if file exists
             if (formData.documentation_file) {
@@ -173,13 +249,19 @@ export default function PublishProject() {
                     formData.status === 'in_progress' ? 'in_progress' : 'archived',
                 github_url: formData.github_url,
                 live_url: formData.live_url || null,
-                thumbnail_url: null, // TODO: Implement file upload
-                media_urls: [],
-                documentation_url: finalDocUrl
+                thumbnail_url: thumbnailUrl,
+                media_urls: screenshotUrls,
+                documentation_url: finalDocUrl,
+                visibility: formData.visibility
             };
 
-            await projectAPI.create(projectData);
-            toast.success('Project published successfully!');
+            if (isEditMode) {
+                await projectAPI.update(projectId, projectData);
+                toast.success('Project updated successfully!');
+            } else {
+                await projectAPI.create(projectData);
+                toast.success('Project published successfully!');
+            }
             navigate('/dashboard');
         } catch (error) {
             console.error('Publish error:', error);
@@ -255,7 +337,7 @@ export default function PublishProject() {
                                 </span>
                             </div>
                             <h1 className="font-heading font-bold text-2xl tracking-tight text-foreground mt-1">
-                                Publish Project
+                                {isEditMode ? 'Edit Project' : 'Publish Project'}
                             </h1>
                         </div>
                     </div>
@@ -549,12 +631,16 @@ function Step3Media({ formData, updateField }) {
             {/* Documentation File */}
             <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                    Project Documentation <span className="text-destructive">*</span>
+                    Project Documentation
                 </label>
                 <DocumentUploader
-                    value={formData.documentation_file}
+                    value={formData.documentation_file || formData.documentation_url}
+                    fileName={formData.documentation_file?.name || (formData.documentation_url ? 'Current documentation' : '')}
                     onChange={(file) => updateField('documentation_file', file)}
-                    onRemove={() => updateField('documentation_file', null)}
+                    onRemove={() => {
+                        updateField('documentation_file', null);
+                        updateField('documentation_url', '');
+                    }}
                 />
                 <p className="mt-2 text-xs text-muted-foreground">
                     Upload a .pdf, .doc, or .docx file containing detailed project documentation.

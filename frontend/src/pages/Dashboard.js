@@ -269,7 +269,7 @@ export default function Dashboard() {
                             getStatusBadge={getStatusBadge}
                             activeMenu={activeMenu}
                             setActiveMenu={setActiveMenu}
-                            onEdit={(p) => toast.info('Edit feature coming soon')}
+                            onEdit={(p) => navigate(`/publish/${p.project_id}`)}
                             onDelete={handleDelete}
                             onDuplicate={handleDuplicate}
                             onArchive={handleArchive}
@@ -282,7 +282,7 @@ export default function Dashboard() {
                             getStatusBadge={getStatusBadge}
                             activeMenu={activeMenu}
                             setActiveMenu={setActiveMenu}
-                            onEdit={(p) => toast.info('Edit feature coming soon')}
+                            onEdit={(p) => navigate(`/publish/${p.project_id}`)}
                             onDelete={handleDelete}
                             onDuplicate={handleDuplicate}
                             onArchive={handleArchive}

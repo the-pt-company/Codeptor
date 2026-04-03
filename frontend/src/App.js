@@ -87,6 +87,14 @@ function App() {
                   }
                 />
                 <Route
+                  path="/publish/:projectId"
+                  element={
+                    <ProtectedRoute>
+                      <PublishProject />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
                   path="/settings"
                   element={
                     <ProtectedRoute>

@@ -65,12 +65,9 @@ export default function Profile() {
                 }
             }
 
-            // Fetch user's projects
-            const projectsRes = await projectAPI.getAll();
-            const userProjects = (projectsRes.data || []).filter(
-                p => p.user_username === username
-            );
-            setProjects(userProjects);
+            // Fetch projects with backend visibility rules applied
+            const projectsRes = await projectAPI.getByUsername(username);
+            setProjects(projectsRes.data || []);
 
             // Fetch blog data
             try {

@@ -67,6 +67,11 @@ export const projectAPI = {
     getById: (id) => api.get(`/api/projects/${id}`),
     update: (id, data) => api.put(`/api/projects/${id}`, data),
     delete: (id) => api.delete(`/api/projects/${id}`),
+    uploadImage: (formData) => api.post('/api/projects/upload-image', formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+    }),
     uploadDocument: (formData) => api.post('/api/projects/upload-document', formData, {
         headers: {
             'Content-Type': 'multipart/form-data',
