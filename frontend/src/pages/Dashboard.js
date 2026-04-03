@@ -307,6 +307,11 @@ function GridView({ projects, formatRelativeTime, getStatusBadge, activeMenu, se
                         key={project.project_id}
                         to={`/project/${project.project_id}`}
                         className="rounded-lg border border-border bg-card p-5 hover:border-accent/50 hover:shadow-lg transition-all duration-300 group relative no-underline"
+                        onClick={(e) => {
+                            if (e.target.closest('button') || e.target.closest('[data-project-menu="true"]')) {
+                                e.preventDefault();
+                            }
+                        }}
                     >
                         <div
                             onClick={(e) => e.stopPropagation()}
@@ -318,9 +323,10 @@ function GridView({ projects, formatRelativeTime, getStatusBadge, activeMenu, se
                                 </h3>
 
                                 {/* Actions Menu */}
-                                <div className="relative">
+                                <div className="relative" data-project-menu="true">
                                     <button
                                         onClick={(e) => {
+                                            e.preventDefault();
                                             e.stopPropagation();
                                             setActiveMenu(activeMenu === project.project_id ? null : project.project_id);
                                         }}
@@ -467,6 +473,7 @@ function ListView({ projects, formatRelativeTime, getStatusBadge, activeMenu, se
                         <div className="md:col-span-1 relative flex justify-end" onClick={(e) => e.stopPropagation()}>
                             <button
                                 onClick={(e) => {
+                                    e.preventDefault();
                                     e.stopPropagation();
                                     setActiveMenu(activeMenu === project.project_id ? null : project.project_id);
                                 }}
@@ -495,20 +502,30 @@ function ListView({ projects, formatRelativeTime, getStatusBadge, activeMenu, se
 
 // Quick Actions Dropdown Menu
 function QuickActionsMenu({ project, onEdit, onDelete, onDuplicate, onArchive, onPin }) {
+    const runAction = (e, action) => {
+        e.preventDefault();
+        e.stopPropagation();
+        action();
+    };
+
     return (
         <div
             className="absolute right-0 top-full mt-1 z-50 w-48 bg-popover border border-border rounded-md shadow-lg py-1"
-            onClick={(e) => e.stopPropagation()}
+            data-project-menu="true"
+            onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            }}
         >
             <button
-                onClick={() => onEdit(project)}
+                onClick={(e) => runAction(e, () => onEdit(project))}
                 className="w-full px-3 py-2 text-sm text-left text-foreground hover:bg-muted flex items-center gap-2 transition-colors"
             >
                 <Edit2 className="w-4 h-4" />
                 Edit Project
             </button>
             <button
-                onClick={() => window.open(project.live_url, '_blank')}
+                onClick={(e) => runAction(e, () => project.live_url && window.open(project.live_url, '_blank', 'noopener,noreferrer'))}
                 disabled={!project.live_url}
                 className="w-full px-3 py-2 text-sm text-left text-foreground hover:bg-muted flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -516,14 +533,14 @@ function QuickActionsMenu({ project, onEdit, onDelete, onDuplicate, onArchive, o
                 View Live
             </button>
             <button
-                onClick={() => onDuplicate(project)}
+                onClick={(e) => runAction(e, () => onDuplicate(project))}
                 className="w-full px-3 py-2 text-sm text-left text-foreground hover:bg-muted flex items-center gap-2 transition-colors"
             >
                 <Copy className="w-4 h-4" />
                 Duplicate
             </button>
             <button
-                onClick={() => onPin(project)}
+                onClick={(e) => runAction(e, () => onPin(project))}
                 className="w-full px-3 py-2 text-sm text-left text-foreground hover:bg-muted flex items-center gap-2 transition-colors"
             >
                 <Pin className="w-4 h-4" />
@@ -531,14 +548,14 @@ function QuickActionsMenu({ project, onEdit, onDelete, onDuplicate, onArchive, o
             </button>
             <div className="border-t border-border my-1" />
             <button
-                onClick={() => onArchive(project)}
+                onClick={(e) => runAction(e, () => onArchive(project))}
                 className="w-full px-3 py-2 text-sm text-left text-foreground hover:bg-muted flex items-center gap-2 transition-colors"
             >
                 <Archive className="w-4 h-4" />
                 Archive
             </button>
             <button
-                onClick={() => onDelete(project.project_id)}
+                onClick={(e) => runAction(e, () => onDelete(project.project_id))}
                 className="w-full px-3 py-2 text-sm text-left text-destructive hover:bg-destructive/10 flex items-center gap-2 transition-colors"
             >
                 <Trash2 className="w-4 h-4" />
