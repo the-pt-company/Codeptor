@@ -790,7 +790,16 @@ async def forgot_password(request: ForgotPasswordRequest):
             }
         },
     )
-    asyncio.create_task(send_reset_email(request.email, reset_token))
+    email_sent = await send_reset_email(request.email, reset_token)
+    if not email_sent:
+        await db.users.update_one(
+            {"email": request.email},
+            {"$unset": {"reset_token_id": "", "reset_token_expires_at": ""}},
+        )
+        raise HTTPException(
+            status_code=502,
+            detail="We couldn't send the reset email right now. Please try again later.",
+        )
 
     return {"message": "If an account exists with this email, a reset link has been sent."}
 

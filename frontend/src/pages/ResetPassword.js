@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Header } from '../components/layout/Header';
 import { authAPI } from '../lib/api';
@@ -7,19 +7,43 @@ import { getErrorMessage } from '../lib/utils';
 import { Lock, CheckCircle2, Eye, EyeOff } from 'lucide-react';
 
 export default function ResetPassword() {
-    const { token } = useParams();
+    const { token: tokenFromPath } = useParams();
+    const [searchParams] = useSearchParams();
+    const token = searchParams.get('token') || tokenFromPath;
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [loading, setLoading] = useState(false);
+    const [validating, setValidating] = useState(Boolean(token));
+    const [tokenError, setTokenError] = useState(token ? '' : 'This reset link is missing or invalid. Please request a new one.');
     const [success, setSuccess] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
-    const hasValidToken = Boolean(token);
+    const hasValidToken = Boolean(token) && !tokenError;
+
+    useEffect(() => {
+        const checkToken = async () => {
+            if (!token) {
+                setValidating(false);
+                return;
+            }
+
+            try {
+                await authAPI.validateResetToken(token);
+                setTokenError('');
+            } catch (error) {
+                setTokenError(getErrorMessage(error, 'This reset link is invalid or expired. Please request a new one.'));
+            } finally {
+                setValidating(false);
+            }
+        };
+
+        checkToken();
+    }, [token]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!hasValidToken) {
-            toast.error('This reset link is invalid. Please request a new one.');
+        if (!hasValidToken || validating) {
+            toast.error(tokenError || 'This reset link is invalid. Please request a new one.');
             return;
         }
 
@@ -61,9 +85,11 @@ export default function ResetPassword() {
                                     Set New Password
                                 </h1>
                                 <p className="mt-2 text-sm text-muted-foreground">
-                                    {hasValidToken
-                                        ? 'Please enter your new password below.'
-                                        : 'This reset link is missing or invalid. Please request a new one.'}
+                                    {validating
+                                        ? 'Validating your reset link...'
+                                        : hasValidToken
+                                            ? 'Please enter your new password below.'
+                                            : tokenError}
                                 </p>
                             </div>
 
@@ -84,7 +110,7 @@ export default function ResetPassword() {
                                                 onChange={(e) => setPassword(e.target.value)}
                                                 className="flex h-10 w-full rounded-md border border-input bg-background pl-10 pr-10 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                                 placeholder="••••••••"
-                                                disabled={!hasValidToken}
+                                                disabled={!hasValidToken || validating}
                                             />
                                             <button
                                                 type="button"
@@ -112,7 +138,7 @@ export default function ResetPassword() {
                                                 onChange={(e) => setConfirmPassword(e.target.value)}
                                                 className="flex h-10 w-full rounded-md border border-input bg-background pl-10 pr-10 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                                 placeholder="••••••••"
-                                                disabled={!hasValidToken}
+                                                disabled={!hasValidToken || validating}
                                             />
                                             <button
                                                 type="button"
@@ -128,10 +154,16 @@ export default function ResetPassword() {
 
                                 <button
                                     type="submit"
-                                    disabled={loading || !hasValidToken}
+                                    disabled={loading || !hasValidToken || validating}
                                     className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 rounded-md font-medium transition-all active:scale-95 disabled:opacity-50"
                                 >
-                                    {loading ? 'Resetting...' : hasValidToken ? 'Reset Password' : 'Invalid Reset Link'}
+                                    {loading
+                                        ? 'Resetting...'
+                                        : validating
+                                            ? 'Checking Link...'
+                                            : hasValidToken
+                                                ? 'Reset Password'
+                                                : 'Invalid Reset Link'}
                                 </button>
                             </form>
                         </>
