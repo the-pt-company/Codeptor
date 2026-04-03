@@ -133,7 +133,6 @@ export const Header = () => {
                     <div style={iconBg}>
                         <BrandLogo size={22} color="#111111" />
                     </div>
-                    KudosD
                 </Link>
 
                 {/* Navigation */}
