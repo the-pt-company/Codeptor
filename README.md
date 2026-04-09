@@ -237,12 +237,6 @@ Run from the project root:
 
 ---
 
-## 📄 License
-
-This project is licensed under the [MIT License](LICENSE).
-
----
-
 <div align="center">
 
 **Built with ☕ and curiosity.**
