@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Plus } from 'lucide-react';
 import { ProfileDropdown } from '../profile/ProfileDropdown';
-import { BrandLogo } from './BrandLogo';
 
 /* ── Liquid Glass Header ─────────────────────────────────────────────────── */
 
@@ -96,21 +95,6 @@ export const Header = () => {
         letterSpacing: '-0.5px',
         color: '#0a0a0a',
         textDecoration: 'none',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-    };
-
-    const iconBg = {
-        width: '30px',
-        height: '30px',
-        borderRadius: '8px',
-        background: '#ffffff',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        border: '1px solid rgba(0,0,0,0.08)',
-        flexShrink: 0,
     };
 
     const themeToggleStyle = {
@@ -130,9 +114,7 @@ export const Header = () => {
             }}>
                 {/* Logo */}
                 <Link to="/" style={logoStyle}>
-                    <div style={iconBg}>
-                        <BrandLogo size={22} color="#111111" />
-                    </div>
+                    Codeptor
                 </Link>
 
                 {/* Navigation */}
