@@ -402,8 +402,8 @@ export default function Profile() {
                 isOpen={showShareModal}
                 onClose={() => setShowShareModal(false)}
                 url={`${window.location.origin}/profile/${username}`}
-                title={`${profileUser?.full_name || username}'s Developer Profile on KudosDev`}
-                description={profileUser?.bio || 'Check out this developer on KudosDev!'}
+                title={`${profileUser?.full_name || username}'s Developer Profile on Codeptor`}
+                description={profileUser?.bio || 'Check out this developer on Codeptor!'}
                 type="profile"
                 onGenerateCard={() => setShowShareCard(true)}
             />

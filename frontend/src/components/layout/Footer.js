@@ -24,7 +24,7 @@ export const Footer = () => {
             return;
         }
 
-        window.location.href = `mailto:kudosdev7@gmail.com?subject=${encodeURIComponent('Newsletter Subscription Request')}&body=${encodeURIComponent(`Please add ${email} to the KudosDev newsletter list.`)}`;
+        window.location.href = `mailto:kudosdev7@gmail.com?subject=${encodeURIComponent('Newsletter Subscription Request')}&body=${encodeURIComponent(`Please add ${email} to the Codeptor newsletter list.`)}`;
         setNewsletterEmail('');
         toast.success('Opening your mail app to complete subscription');
     };
@@ -40,7 +40,7 @@ export const Footer = () => {
                                 <BrandLogo size={28} color="#111111" />
                             </div>
                             <span className="font-heading font-bold text-2xl text-foreground tracking-tight">
-                                KudosDev
+                                Codeptor
                             </span>
                         </Link>
                         <p className="text-muted-foreground leading-relaxed max-w-xs">
@@ -120,7 +120,7 @@ export const Footer = () => {
                 {/* Bottom Bar */}
                 <div className="border-t border-border pt-8 mt-8 flex flex-col md:flex-row justify-between items-center gap-4">
                     <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                        <span>© 2026 KudosDev Inc.</span>
+                        <span>© 2026 Codeptor Inc.</span>
                         <span>Privacy Policy</span>
                         <span>Terms of Service</span>
                     </div>

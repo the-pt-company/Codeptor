@@ -47,7 +47,7 @@ export const ProfileShareCard = ({ user, stats, onClose }) => {
         const canvas = await captureCard();
         if (!canvas) return;
         const link = document.createElement('a');
-        link.download = `${user?.username || 'profile'}-kudosdev.png`;
+        link.download = `${user?.username || 'profile'}-codeptor.png`;
         link.href = canvas.toDataURL('image/png');
         link.click();
         toast.success('Profile card downloaded!');
@@ -58,13 +58,13 @@ export const ProfileShareCard = ({ user, stats, onClose }) => {
         if (!canvas) return;
         canvas.toBlob(async (blob) => {
             if (!blob) return;
-            const file = new File([blob], `${user?.username}-kudosdev.png`, { type: 'image/png' });
+            const file = new File([blob], `${user?.username}-codeptor.png`, { type: 'image/png' });
 
             if (navigator.share && navigator.canShare?.({ files: [file] })) {
                 try {
                     await navigator.share({
                         title: `${user?.full_name}'s Developer Profile`,
-                        text: `Check out ${user?.full_name}'s profile on KudosDev!`,
+                        text: `Check out ${user?.full_name}'s profile on Codeptor!`,
                         files: [file],
                     });
                     toast.success('Shared successfully!');
@@ -148,10 +148,10 @@ export const ProfileShareCard = ({ user, stats, onClose }) => {
                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                                     fontSize: '14px', fontWeight: 'bold', color: '#fff',
                                 }}>
-                                    K
+                                    C
                                 </div>
                                 <span style={{ fontSize: '14px', fontWeight: '600', color: '#94a3b8', letterSpacing: '0.5px' }}>
-                                    KudosDev
+                                    Codeptor
                                 </span>
                             </div>
                             <span style={{ fontSize: '11px', color: '#475569', letterSpacing: '1px', textTransform: 'uppercase' }}>
@@ -322,10 +322,10 @@ export const ProfileShareCard = ({ user, stats, onClose }) => {
                             position: 'relative', zIndex: 1,
                         }}>
                             <span style={{ fontSize: '10px', color: '#334155' }}>
-                                kudosdev.com/{user?.username}
+                                codeptor.com/{user?.username}
                             </span>
                             <span style={{ fontSize: '10px', color: '#334155' }}>
-                                Built with KudosDev
+                                Built with Codeptor
                             </span>
                         </div>
                     </div>

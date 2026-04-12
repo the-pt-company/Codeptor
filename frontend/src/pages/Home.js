@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Footer } from '../components/layout/Footer';
+import { BrandLogo } from '../components/layout/BrandLogo';
 import { FeatureCard } from '../components/FeatureCard';
 import { useAuth } from '../context/AuthContext';
 import { Code2, Zap, Users, PenSquare, ArrowRight, Plus } from 'lucide-react';
@@ -78,6 +79,9 @@ const styles = {
     width: 'fit-content',
   },
   navLogo: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '10px',
     fontFamily: "'Fustat', sans-serif",
     fontWeight: '800',
     fontSize: '18px',
@@ -358,7 +362,10 @@ export default function Home() {
         <div style={styles.navbarWrap}>
           <nav style={styles.navbar} aria-label="Main navigation">
             {/* Logo */}
-            <Link to="/" style={styles.navLogo}>KudosD</Link>
+            <Link to="/" style={styles.navLogo}>
+              <BrandLogo size={28} />
+              <span>Codeptor</span>
+            </Link>
 
             {isAuthenticated ? (
               <>

@@ -688,7 +688,7 @@ export default function ProjectDetail() {
                 isOpen={shareOpen}
                 onClose={() => setShareOpen(false)}
                 url={window.location.href}
-                title={`Check out ${project.title} on KudosDev!`}
+                title={`Check out ${project.title} on Codeptor!`}
                 description={project.description}
                 type="project"
                 onGenerateCard={() => setShowShareCard(true)}

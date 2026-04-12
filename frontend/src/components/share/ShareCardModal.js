@@ -57,7 +57,7 @@ const SpectrumCard = ({ user, stats }) => (
             <div style={{ fontSize: 14, fontWeight: 800, color: 'white', background: 'rgba(0,0,0,0.2)', padding: '6px 16px', borderRadius: 100, border: '1px solid rgba(255,255,255,0.2)' }}>
                 Expert Developer
             </div>
-            <div style={{ fontSize: 14, color: 'white', fontWeight: 900, letterSpacing: -0.5, opacity: 0.8 }}>KudosD</div>
+            <div style={{ fontSize: 14, color: 'white', fontWeight: 900, letterSpacing: -0.5, opacity: 0.8 }}>Codeptor</div>
         </div>
     </div>
 );
@@ -108,7 +108,7 @@ const GlassCard = ({ user, stats }) => (
                     <span key={s} style={{ background: 'rgba(255,255,255,0.2)', color: 'white', borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 600 }}>{s}</span>
                 ))}
             </div>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', fontWeight: 700 }}>KudosDev</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', fontWeight: 700 }}>Codeptor</div>
         </div>
     </div>
 );
@@ -164,7 +164,7 @@ const NeonCard = ({ user, stats }) => (
                     <span key={s} style={{ background: 'rgba(99,102,241,0.15)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.3)', borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 600 }}>{s}</span>
                 ))}
             </div>
-            <div style={{ fontSize: 12, color: '#6366f1', fontWeight: 800, textShadow: '0 0 10px rgba(99,102,241,0.5)' }}>KudosDev ⚡</div>
+            <div style={{ fontSize: 12, color: '#6366f1', fontWeight: 800, textShadow: '0 0 10px rgba(99,102,241,0.5)' }}>Codeptor ⚡</div>
         </div>
     </div>
 );
@@ -205,7 +205,7 @@ const SleekProjectCard = ({ project }) => (
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{ fontSize: 13, fontWeight: 800, color: '#f8fafc' }}>{project?.user_username}</div>
             </div>
-            <div style={{ fontSize: 14, color: '#6366f1', fontWeight: 900, letterSpacing: -0.5 }}>KudosDev</div>
+            <div style={{ fontSize: 14, color: '#6366f1', fontWeight: 900, letterSpacing: -0.5 }}>Codeptor</div>
         </div>
     </div>
 );
@@ -245,7 +245,7 @@ const GlitchProjectCard = ({ project }) => (
                 <div style={{ fontSize: 11, fontWeight: 900, color: '#666', textTransform: 'uppercase' }}>Built by</div>
                 <div style={{ fontSize: 18, fontWeight: 1000, color: '#000' }}>@{project?.user_username}</div>
             </div>
-            <div style={{ fontSize: 18, color: '#000', fontWeight: 1000, letterSpacing: -1 }}>KUDOSDEV.</div>
+            <div style={{ fontSize: 18, color: '#000', fontWeight: 1000, letterSpacing: -1 }}>CODEPTOR.</div>
         </div>
     </div>
 );
@@ -314,7 +314,7 @@ const MinimalCard = ({ user, stats, project, type }) => (
             ) : (
                 <div style={{ fontSize: 13, fontWeight: 700, color: '#64748b' }}>by @{project?.user_username}</div>
             )}
-            <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 700 }}>KudosDev</div>
+            <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 700 }}>Codeptor</div>
         </div>
     </div>
 );
@@ -362,7 +362,7 @@ const IndustrialProjectCard = ({ project }) => (
                 </div>
                 <div style={{ fontSize: 12, fontWeight: 700, color: 'white' }}>@{project?.user_username}</div>
             </div>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', fontWeight: 800 }}>KudosDev</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', fontWeight: 800 }}>Codeptor</div>
         </div>
     </div>
 );
@@ -405,7 +405,7 @@ export default function ShareCardModal({ isOpen, onClose, user, stats, project, 
             const dataUrl = await toPng(cardRef.current, { cacheBust: true, pixelRatio: 2 });
             const link = document.createElement('a');
             const name = type === 'profile' ? user?.username : project?.title?.toLowerCase().replace(/\s+/g, '-');
-            link.download = `kudosdev-${name}-card.png`;
+            link.download = `codeptor-${name}-card.png`;
             link.href = dataUrl;
             link.click();
             toast.success('Card downloaded successfully!');
@@ -425,8 +425,8 @@ export default function ShareCardModal({ isOpen, onClose, user, stats, project, 
 
     const shareOnTwitter = () => {
         const text = type === 'profile' 
-            ? `Check out ${user?.full_name || user?.username}'s developer profile on KudosDev!`
-            : `Check out this project "${project?.title}" on KudosDev!`;
+            ? `Check out ${user?.full_name || user?.username}'s developer profile on Codeptor!`
+            : `Check out this project "${project?.title}" on Codeptor!`;
         window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(profileUrl)}`, '_blank');
     };
 
@@ -542,4 +542,3 @@ export default function ShareCardModal({ isOpen, onClose, user, stats, project, 
         </AnimatePresence>
     );
 }
-
