@@ -14,7 +14,8 @@ import {
     VideoInput,
     VersionEntry,
     VersionEntryForm,
-    DocumentUploader
+    DocumentUploader,
+    MarkdownEditor
 } from '../components/publish';
 import { getErrorMessage } from '../lib/utils';
 
@@ -252,6 +253,7 @@ export default function PublishProject() {
                 thumbnail_url: thumbnailUrl,
                 media_urls: screenshotUrls,
                 documentation_url: finalDocUrl,
+                video_url: formData.video_url || null,
                 visibility: formData.visibility
             };
 
@@ -413,27 +415,24 @@ function Step1CoreInfo({ formData, updateField }) {
                 />
             </div>
 
-            {/* Description */}
+            {/* Description (Markdown Editor) */}
             <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
                     Description <span className="text-destructive">*</span>
                 </label>
-                <textarea
+                <MarkdownEditor
                     value={formData.description}
-                    onChange={(e) => updateField('description', e.target.value)}
-                    placeholder="Describe your project in detail. What problem does it solve? How does it work?"
-                    rows={5}
-                    className="
-                        w-full px-4 py-3 rounded-md
-                        border border-input bg-background
-                        text-foreground resize-none
-                        placeholder:text-muted-foreground
-                        focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2
-                        transition-all
-                    "
+                    onChange={(value) => updateField('description', value)}
+                    placeholder="Describe your project in detail using Markdown. What problem does it solve? How does it work? Include code examples, architecture decisions, or feature highlights."
+                    minHeight="240px"
                 />
-                <div className="mt-1 text-xs text-muted-foreground text-right">
-                    {formData.description.length}/500 characters
+                <div className="mt-1.5 flex items-center justify-between">
+                    <p className="text-xs text-muted-foreground">
+                        Supports **bold**, *italic*, `code`, headings, lists, and links
+                    </p>
+                    <span className="text-xs text-muted-foreground">
+                        {formData.description.length}/2000 characters
+                    </span>
                 </div>
             </div>
 

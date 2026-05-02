@@ -1,3 +1,4 @@
+import { auth } from './firebase';
 import axios from 'axios';
 
 const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000';
@@ -23,9 +24,10 @@ const api = axios.create({
 
 // Add request interceptor to add auth token
 api.interceptors.request.use(
-    (config) => {
-        const token = localStorage.getItem('token');
-        if (token) {
+    async (config) => {
+        const user = auth.currentUser;
+        if (user) {
+            const token = await user.getIdToken();
             config.headers.Authorization = `Bearer ${token}`;
         }
         return config;
@@ -37,9 +39,7 @@ api.interceptors.request.use(
 
 // Auth APIs
 export const authAPI = {
-    register: (data) => api.post('/api/auth/register', data),
-    login: (data) => api.post('/api/auth/login', data),
-    googleLogin: (data) => api.post('/api/auth/google', data),
+    sync: (data) => api.post('/api/auth/sync', data),
     getMe: () => api.get('/api/auth/me'),
     updateMe: (data) => api.put('/api/auth/me', data),
     forgotPassword: (data) => api.post('/api/auth/forgot-password', data),

@@ -9,10 +9,10 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: "3.11.9"
-      - key: MONGO_URL
-        sync: false          # Set manually in Render dashboard
-      - key: DB_NAME
-        value: KudosDev
+      - key: FIREBASE_PROJECT_ID
+        sync: false
+      - key: FIREBASE_CREDENTIALS_JSON
+        sync: false
       - key: SECRET_KEY
         sync: false          # Set manually in Render dashboard
       - key: GOOGLE_CLIENT_ID

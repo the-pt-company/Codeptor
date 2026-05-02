@@ -18,7 +18,7 @@ export const SkillsSection = ({ skills, isOwnProfile }) => {
 
         const languageKeywords = ['JavaScript', 'Python', 'TypeScript', 'Java', 'C++', 'C#', 'Go', 'Rust', 'Ruby', 'PHP', 'Swift', 'Kotlin'];
         const frameworkKeywords = ['React', 'Vue', 'Angular', 'Next.js', 'Node.js', 'Express', 'Django', 'FastAPI', 'Flask', 'Spring', 'Rails', 'Laravel'];
-        const toolKeywords = ['Git', 'Docker', 'AWS', 'Azure', 'GCP', 'Kubernetes', 'MongoDB', 'PostgreSQL', 'Redis', 'GraphQL', 'REST', 'CI/CD'];
+        const toolKeywords = ['Git', 'Docker', 'AWS', 'Azure', 'GCP', 'Kubernetes', 'Firestore', 'PostgreSQL', 'Redis', 'GraphQL', 'REST', 'CI/CD'];
 
         const categories = { languages: [], frameworks: [], tools: [] };
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Header } from '../components/layout/Header';
 import { Footer } from '../components/layout/Footer';
 import { projectAPI, resolveMediaUrl } from '../lib/api';
@@ -8,8 +8,13 @@ import { useAuth } from '../context/AuthContext';
 import { useTilt } from '../hooks/useTilt';
 import ShareModal from '../components/share/ShareModal';
 import ShareCardModal from '../components/share/ShareCardModal';
+import ProjectVideoPlayer from '../components/project/VideoPlayer';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import {
-    Github, ExternalLink, Calendar, ArrowLeft, Code2,
+    Github, Calendar, ArrowLeft, Code2,
     Share2, MessageSquare, Star, Bookmark, ChevronLeft,
     ChevronRight, X, ExternalLinkIcon, Eye, Clock,
     Layers, Heart, Globe
@@ -29,7 +34,7 @@ const TECH_COLORS = {
     rust: { bg: '#ffedd5', text: '#9a3412', border: '#fed7aa' },
     go: { bg: '#e0f2fe', text: '#075985', border: '#bae6fd' },
     java: { bg: '#fee2e2', text: '#991b1b', border: '#fecaca' },
-    mongodb: { bg: '#dcfce7', text: '#14532d', border: '#86efac' },
+    firestore: { bg: '#dcfce7', text: '#14532d', border: '#86efac' },
     postgresql: { bg: '#dbeafe', text: '#1e40af', border: '#bfdbfe' },
     fastapi: { bg: '#d1fae5', text: '#065f46', border: '#6ee7b7' },
     django: { bg: '#dcfce7', text: '#14532d', border: '#86efac' },
@@ -147,14 +152,14 @@ const Lightbox = ({ images, initialIndex, onClose }) => {
 export default function ProjectDetail() {
     const { projectId } = useParams();
     const navigate = useNavigate();
-    const { user, isAuthenticated } = useAuth();
+    const { isAuthenticated } = useAuth(); // eslint-disable-line no-unused-vars
 
     const [project, setProject] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     const [lightboxIndex, setLightboxIndex] = useState(null);
-    const [heroVisible, setHeroVisible] = useState(false);
+    const [, setHeroVisible] = useState(false); // heroVisible reserved for future animation gating
     const [shareOpen, setShareOpen] = useState(false);
     const [showShareCard, setShowShareCard] = useState(false);
     const sidebarRef = useRef(null);
@@ -410,6 +415,17 @@ export default function ProjectDetail() {
                                     )}
                                 </motion.div>
 
+                                {/* Demo Video */}
+                                {project.video_url && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 20 }}
+                                        whileInView={{ opacity: 1, y: 0 }}
+                                        viewport={{ once: true }}
+                                    >
+                                        <ProjectVideoPlayer url={project.video_url} />
+                                    </motion.div>
+                                )}
+
                                 {/* Project Overview */}
                                 <motion.div 
                                     initial={{ opacity: 0, y: 20 }}
@@ -424,14 +440,32 @@ export default function ProjectDetail() {
                                         </span>
                                         Project Overview
                                     </h2>
-                                    <div className="prose prose-slate max-w-none">
-                                        <p className="text-gray-600 leading-relaxed text-base mb-4">
+                                    <div className="prose prose-slate max-w-none prose-headings:text-gray-900 prose-p:text-gray-600 prose-p:leading-relaxed prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-code:text-sm prose-code:bg-slate-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:font-mono prose-pre:bg-transparent prose-pre:p-0 prose-img:rounded-xl">
+                                        <ReactMarkdown
+                                            remarkPlugins={[remarkGfm]}
+                                            components={{
+                                                code({ node, inline, className, children, ...props }) {
+                                                    const match = /language-(\w+)/.exec(className || '');
+                                                    return !inline && match ? (
+                                                        <SyntaxHighlighter
+                                                            style={oneDark}
+                                                            language={match[1]}
+                                                            PreTag="div"
+                                                            className="rounded-xl !my-4 text-sm"
+                                                            {...props}
+                                                        >
+                                                            {String(children).replace(/\n$/, '')}
+                                                        </SyntaxHighlighter>
+                                                    ) : (
+                                                        <code className={className} {...props}>
+                                                            {children}
+                                                        </code>
+                                                    );
+                                                }
+                                            }}
+                                        >
                                             {project.description}
-                                        </p>
-                                        <p className="text-gray-500 leading-relaxed text-sm">
-                                            This project was built to demonstrate a modern tech stack implementation. 
-                                            All code follows clean architecture principles and production-ready practices.
-                                        </p>
+                                        </ReactMarkdown>
                                     </div>
 
                                     {project.documentation_url && (

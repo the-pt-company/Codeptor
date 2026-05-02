@@ -33,7 +33,7 @@ Whether you're building credibility for your next role or sharing knowledge with
 
 ## 🏗️ Architecture
 
-KudosDev is built as a **service-oriented architecture** with three independently running services sharing a common MongoDB database.
+KudosDev is built as a **service-oriented architecture** with three independently running services sharing a common Firestore database.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -64,7 +64,7 @@ KudosDev is built as a **service-oriented architecture** with three independentl
            │                                  │
            ▼                                  ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                        MongoDB (Shared)                         │
+│                        Firestore (Shared)                         │
 │                                                                 │
 │   Users · Projects · Blogs · Analytics Events · Sessions        │
 └─────────────────────────────────────────────────────────────────┘
@@ -75,9 +75,9 @@ KudosDev is built as a **service-oriented architecture** with three independentl
 | Decision | Rationale |
 |----------|-----------|
 | **Separate analytics service** | Isolates high-frequency tracking writes from the main API, allowing independent scaling and rate limiting |
-| **FastAPI for the core API** | Async-first Python framework with automatic OpenAPI docs, Pydantic validation, and excellent MongoDB driver support via Motor |
+| **FastAPI for the core API** | Async-first Python framework with automatic OpenAPI docs, Pydantic validation, and excellent Firebase Admin SDK support |
 | **React SPA with Tailwind** | Component-driven UI with utility-first styling for rapid, consistent development |
-| **Shared MongoDB** | Simplifies data access across services while keeping deployment straightforward for a portfolio-scale project |
+| **Shared Firestore** | Simplifies data access across services while keeping deployment straightforward for a portfolio-scale project |
 
 ---
 
@@ -86,9 +86,9 @@ KudosDev is built as a **service-oriented architecture** with three independentl
 | Layer | Technology |
 |-------|------------|
 | **Frontend** | React · Tailwind CSS · React Router · Axios |
-| **Backend API** | Python · FastAPI · Motor (async MongoDB) |
-| **Analytics** | Node.js · Express · Mongoose |
-| **Database** | MongoDB |
+| **Backend API** | Python · FastAPI · Firebase Admin SDK |
+| **Analytics** | Node.js · Express · Firebase Admin SDK |
+| **Database** | Firestore |
 | **Auth** | JWT · bcrypt |
 | **DevOps** | Concurrently (multi-service orchestration) |
 
@@ -105,7 +105,7 @@ User Action → React UI → Axios HTTP Request
    (FastAPI)              (FastAPI)              (Express)
         │                     │                      │
         ▼                     ▼                      ▼
-   JWT Issued           MongoDB Read/Write      Event Stored
+   JWT Issued           Firestore Read/Write      Event Stored
         │                     │                      │
         ▼                     ▼                      ▼
    Token Stored         JSON Response           Aggregated for
@@ -115,7 +115,7 @@ User Action → React UI → Axios HTTP Request
 1. The **React frontend** handles all user interactions and communicates with backend services via REST APIs
 2. The **FastAPI backend** processes authentication, manages users/projects/blogs, and serves as the primary data layer
 3. The **Analytics service** independently captures page views and engagement events with built-in rate limiting
-4. **MongoDB** stores all persistent data, with each service using its own collections
+4. **Firestore** stores all persistent data, with each service using its own collections
 
 ---
 
@@ -134,7 +134,7 @@ KudosD/
 │
 ├── backend/                    # FastAPI server
 │   ├── server.py               # Routes, models, auth logic
-│   ├── database.py             # MongoDB connection layer
+│   ├── database.py             # Firestore connection layer
 │   ├── requirements.txt
 │   └── uploads/                # User-uploaded assets
 │
@@ -156,7 +156,7 @@ KudosD/
 
 - **Node.js** ≥ 18
 - **Python** ≥ 3.10
-- **MongoDB** — local instance or [MongoDB Atlas](https://www.mongodb.com/atlas)
+- **Firestore** — local instance or [Firebase Firestore](https://www.firestore.com/atlas)
 
 ### Setup
 
@@ -179,7 +179,7 @@ pip install -r requirements.txt
 cd ..
 ```
 
-> **Important:** Edit `backend/.env` and `analytics/.env` with your MongoDB connection string and a strong `SECRET_KEY` before running.
+> **Important:** Edit `backend/.env` and `analytics/.env` with your Firebase credentials and a strong `SECRET_KEY` before running.
 
 ### Run
 
@@ -204,9 +204,9 @@ Each service uses its own `.env` file, created from `.env.example` templates via
 
 | Service | Config File | Key Variables |
 |---------|-------------|---------------|
-| **Backend** | `backend/.env` | `MONGO_URL`, `SECRET_KEY`, `CORS_ORIGINS` |
+| **Backend** | `backend/.env` | `FIREBASE_CREDENTIALS_PATH`, `SECRET_KEY`, `CORS_ORIGINS` |
 | **Frontend** | `frontend/.env` | `REACT_APP_BACKEND_URL` |
-| **Analytics** | `analytics/.env` | `MONGO_URI`, `PORT`, `CORS_ORIGIN`, `RATE_LIMIT_MAX` |
+| **Analytics** | `analytics/.env` | `FIREBASE_CREDENTIALS_JSON`, `PORT`, `CORS_ORIGIN`, `RATE_LIMIT_MAX` |
 
 ---
 

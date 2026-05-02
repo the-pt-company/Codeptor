@@ -1,67 +1,88 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { authAPI } from '../lib/api';
+import { auth } from '../lib/firebase';
+import { 
+    createUserWithEmailAndPassword, 
+    signInWithEmailAndPassword, 
+    signOut, 
+    onAuthStateChanged,
+    GoogleAuthProvider,
+    signInWithPopup
+} from 'firebase/auth';
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [token, setToken] = useState(localStorage.getItem('token'));
 
     useEffect(() => {
-        const checkAuth = async () => {
-            if (token) {
+        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+            if (firebaseUser) {
                 try {
+                    // Firebase user is logged in, now fetch our custom user profile from backend
                     const response = await authAPI.getMe();
-                    setUser(response.data);
+                    setUser({ ...firebaseUser, ...response.data });
                 } catch (error) {
-                    console.error('Auth check failed:', error);
-                    localStorage.removeItem('token');
-                    setToken(null);
+                    console.error('Failed to fetch user profile:', error);
+                    // If backend sync failed, might be a partial registration state.
+                    // We can still set the firebase user, but parts of the app might lack full_name/username
+                    setUser(firebaseUser);
                 }
+            } else {
+                setUser(null);
             }
             setLoading(false);
-        };
+        });
 
-        checkAuth();
-    }, [token]);
+        return () => unsubscribe();
+    }, []);
 
     const login = async (email, password) => {
-        const response = await authAPI.login({ email, password });
-        const { access_token, user: userData } = response.data;
-        localStorage.setItem('token', access_token);
-        setToken(access_token);
-        setUser(userData);
-        return userData;
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        // Let onAuthStateChanged handle the setUser
+        return userCredential.user;
     };
 
     const register = async (userData) => {
-        const response = await authAPI.register(userData);
-        const { access_token, user: newUser } = response.data;
-        localStorage.setItem('token', access_token);
-        setToken(access_token);
-        setUser(newUser);
-        return newUser;
+        // 1. Create Firebase Auth user
+        const userCredential = await createUserWithEmailAndPassword(auth, userData.email, userData.password);
+        
+        // 2. Call backend to sync / create the Firestore profile
+        // The api interceptor will automatically attach the new user's ID token!
+        const response = await authAPI.sync({
+            full_name: userData.full_name,
+            username: userData.username
+        });
+        
+        const fullUser = { ...userCredential.user, ...response.data };
+        setUser(fullUser);
+        return fullUser;
     };
 
-    const logout = () => {
-        localStorage.removeItem('token');
-        setToken(null);
+    const logout = async () => {
+        await signOut(auth);
         setUser(null);
     };
 
-    const googleLogin = async (credential) => {
-        const response = await authAPI.googleLogin({ credential });
-        const { access_token, user: userData } = response.data;
-        localStorage.setItem('token', access_token);
-        setToken(access_token);
-        setUser(userData);
-        return userData;
+    const googleLogin = async () => {
+        const provider = new GoogleAuthProvider();
+        const userCredential = await signInWithPopup(auth, provider);
+        
+        // Ensure backend has the user profile
+        const response = await authAPI.sync({
+            full_name: userCredential.user.displayName,
+            username: userCredential.user.email.split('@')[0], // default username
+        });
+        
+        const fullUser = { ...userCredential.user, ...response.data };
+        setUser(fullUser);
+        return fullUser;
     };
 
     const updateUser = async (data) => {
         const response = await authAPI.updateMe(data);
-        setUser(response.data);
+        setUser(prev => ({ ...prev, ...response.data }));
         return response.data;
     };
 

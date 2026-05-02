@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const Visit = require('../models/Visit');
+const { getDb } = require('../config/db');
 
 // ─── Connected SSE Clients ─────────────────────────────────────────────────────
 
@@ -39,26 +39,22 @@ function broadcast(event, data) {
 
 // ─── Change Stream Watcher ─────────────────────────────────────────────────────
 
-async function startChangeStream() {
-    const pipeline = [{ $match: { operationType: 'insert' } }];
-    const stream = Visit.watch(pipeline);
-
-    stream.on('change', async (change) => {
-        try {
-            const page = change.fullDocument.page;
-            const count = await Visit.countDocuments({ page });
-            broadcast('analytics:view', { page, totalViews: count });
-        } catch (err) {
-            console.error('Analytics change stream broadcast error:', err.message);
-        }
-    });
-
-    stream.on('error', (err) => {
+function startChangeStream() {
+    const db = getDb();
+    const query = db.collection('visitors');
+    
+    const observer = query.onSnapshot(querySnapshot => {
+        querySnapshot.docChanges().forEach(change => {
+            if (change.type === 'added' || change.type === 'modified') {
+                const data = change.doc.data();
+                broadcast('analytics:view', { page: data.page, totalViews: data.totalViews });
+            }
+        });
+    }, err => {
         console.error('Analytics change stream error:', err.message);
     });
 
-    console.log('Analytics Change Stream watcher started');
+    console.log('Analytics Firestore watcher started');
 }
-
 
 module.exports = { router, startChangeStream, broadcast };

@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { GoogleOAuthProvider } from '@react-oauth/google';
+
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { Toaster } from 'sonner';
@@ -23,13 +23,11 @@ import BlogManagement from './pages/BlogManagement';
 import ProjectDetail from './pages/ProjectDetail';
 import ProjectDiscussion from './pages/ProjectDiscussion';
 
-const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || '';
 
 function App() {
   return (
-    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-      <ThemeProvider>
-        <AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
           <BrowserRouter>
             <div className="App min-h-screen bg-background text-foreground transition-colors duration-300">
               <Routes>
@@ -110,9 +108,8 @@ function App() {
               />
             </div>
           </BrowserRouter>
-        </AuthProvider>
-      </ThemeProvider>
-    </GoogleOAuthProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

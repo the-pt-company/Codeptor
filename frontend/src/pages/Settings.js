@@ -73,7 +73,7 @@ export default function Settings() {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        if (!file.type.startswith('image/')) {
+        if (!file.type.startsWith('image/')) {
             toast.error('Please upload an image file');
             return;
         }

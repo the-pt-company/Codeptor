@@ -5,7 +5,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 
-const connectDB = require('./src/config/db');
+const { connectDB } = require('./src/config/db');
 const analyticsRoutes = require('./src/routes/analyticsRoutes');
 const { router: streamRoutes, startChangeStream } = require('./src/routes/streamRoutes');
 const errorHandler = require('./src/middleware/errorHandler');
@@ -53,7 +53,7 @@ app.use(errorHandler);
 const startServer = async () => {
     await connectDB();
 
-    // Start MongoDB Change Stream watcher for live analytics
+    // Start Firestore watcher for live analytics
     startChangeStream();
 
     const server = app.listen(PORT, () => {

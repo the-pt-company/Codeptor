@@ -1,13 +1,13 @@
 # KudosDev Analytics Backend
 
-Scalable analytics microservice — **Node.js · Express · MongoDB Atlas · Mongoose**
+Scalable analytics microservice — **Node.js · Express · Firebase Firestore · Firebase Admin SDK**
 
 ## Quick Start
 
 ```bash
 cd analytics
 npm install
-cp .env.example .env   # edit MONGO_URI
+cp .env.example .env   # edit FIREBASE_CREDENTIALS_JSON
 npm run dev             # dev with hot-reload
 npm start               # production
 ```
@@ -18,7 +18,7 @@ Server runs on `http://localhost:4000`.
 
 | Variable | Description | Default |
 |---|---|---|
-| `MONGO_URI` | MongoDB Atlas URI | *(required)* |
+| `FIREBASE_CREDENTIALS_JSON` | Firebase Firestore URI | *(required)* |
 | `PORT` | Server port | `4000` |
 | `NODE_ENV` | `development` / `production` | `development` |
 | `CORS_ORIGIN` | Allowed origins (comma-sep) | `*` |
@@ -42,7 +42,7 @@ Server runs on `http://localhost:4000`.
    - **Root Directory**: `analytics`
    - **Build Command**: `npm install`
    - **Start Command**: `npm start`
-4. Add env vars: `MONGO_URI`, `NODE_ENV=production`, `CORS_ORIGIN`
+4. Add env vars: `FIREBASE_CREDENTIALS_JSON`, `NODE_ENV=production`, `CORS_ORIGIN`
 
 ## Structure
 

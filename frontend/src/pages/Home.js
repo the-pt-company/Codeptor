@@ -502,7 +502,7 @@ export default function Home() {
                 <p><span className="text-accent"># </span><span className="text-foreground font-medium">Building a REST API with FastAPI</span></p>
                 <p className="text-muted-foreground/60">---</p>
                 <p>Today I learned how to build a <span className="text-yellow-500">**blazing fast**</span> API</p>
-                <p>using <span className="text-accent">FastAPI</span> and <span className="text-accent">MongoDB</span>.</p>
+                <p>using <span className="text-accent">FastAPI</span> and <span className="text-accent">Firestore</span>.</p>
                 <p className="mt-2"><span className="text-green-500">```python</span></p>
                 <p className="text-foreground">@app.get("/api/blogs")</p>
                 <p className="text-foreground">async def get_blogs():</p>

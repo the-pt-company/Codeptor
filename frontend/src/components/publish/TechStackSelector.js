@@ -6,7 +6,7 @@ const POPULAR_TECH = [
     'React', 'Vue.js', 'Angular', 'Next.js', 'Svelte',
     'Node.js', 'Express', 'FastAPI', 'Django', 'Flask',
     'Python', 'JavaScript', 'TypeScript', 'Go', 'Rust', 'Java',
-    'MongoDB', 'PostgreSQL', 'MySQL', 'Redis', 'Supabase',
+    'Firestore', 'PostgreSQL', 'MySQL', 'Redis', 'Supabase',
     'Docker', 'Kubernetes', 'AWS', 'GCP', 'Vercel', 'Netlify',
     'TailwindCSS', 'GraphQL', 'REST API', 'WebSocket',
     'Firebase', 'Prisma', 'SQLite', 'Electron', 'React Native'

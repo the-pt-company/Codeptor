@@ -20,6 +20,7 @@ from typing import List, Optional, Any, Dict
 
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, File, UploadFile, Query
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from firebase_admin import auth as firebase_auth
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv 
@@ -30,7 +31,10 @@ from google.oauth2 import id_token as google_id_token
 from google.auth.transport import requests as google_requests
 import requests
 
-from database import db, client 
+from google.cloud.firestore_v1.base_query import FieldFilter
+from google.cloud import firestore
+
+from database import db, bucket
 
 
 from starlette.responses import StreamingResponse
@@ -203,14 +207,16 @@ async def get_current_user(
 ) -> dict:
     token = credentials.credentials
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get("sub")
-        if email is None:
+        decoded_token = firebase_auth.verify_id_token(token)
+        email: str = decoded_token.get("email")
+        if not email:
             raise HTTPException(status_code=401, detail="Invalid authentication credentials")
-    except JWTError:
+    except Exception as e:
+        logger.error(f"Firebase auth error: {e}")
         raise HTTPException(status_code=401, detail="Invalid authentication credentials")
 
-    user = await db.users.find_one({"email": email}, {"_id": 0})
+    doc = await db.collection("users").document(email).get()
+    user = doc.to_dict() if doc.exists else None
     if user is None:
         raise HTTPException(status_code=401, detail="User not found")
     return user  # type: ignore
@@ -225,13 +231,14 @@ async def get_optional_user(
     if credentials is None:
         return None
     try:
-        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get("sub")
-        if email is None:
+        decoded_token = firebase_auth.verify_id_token(credentials.credentials)
+        email: str = decoded_token.get("email")
+        if not email:
             return None
-    except JWTError:
+    except Exception:
         return None
-    user = await db.users.find_one({"email": email}, {"_id": 0})
+    doc = await db.collection("users").document(email).get()
+    user = doc.to_dict() if doc.exists else None
     return user
 
 
@@ -254,6 +261,12 @@ class UserLogin(BaseModel):
 
 class GoogleAuthRequest(BaseModel):
     credential: str
+
+
+class AuthSyncRequest(BaseModel):
+    full_name: Optional[str] = None
+    username: Optional[str] = None
+    avatar_url: Optional[str] = None
 
 
 class UserResponse(BaseModel):
@@ -310,6 +323,7 @@ class ProjectCreate(BaseModel):
     live_url: Optional[str] = None
     github_url: str  # Mandatory for contribution
     documentation_url: Optional[str] = None
+    video_url: Optional[str] = None
     media_urls: List[str] = []
 
 
@@ -324,6 +338,7 @@ class ProjectUpdate(BaseModel):
     live_url: Optional[str] = None
     github_url: Optional[str] = None
     documentation_url: Optional[str] = None
+    video_url: Optional[str] = None
     media_urls: Optional[List[str]] = None
 
 
@@ -346,6 +361,7 @@ class ProjectResponse(BaseModel):
     live_url: Optional[str] = None
     github_url: Optional[str] = None
     documentation_url: Optional[str] = None
+    video_url: Optional[str] = None
     media_urls: List[str] = []
     created_at: datetime
     updated_at: datetime
@@ -484,18 +500,19 @@ def calculate_reading_time(text: str) -> int:
 
 
 def _user_response(user: dict) -> UserResponse:
-    """Build a UserResponse from a raw MongoDB document."""
+    """Build a UserResponse from a raw Firestore document."""
     return UserResponse(email=user["email"], full_name=user["full_name"], username=user["username"], bio=user.get("bio"), avatar_url=user.get("avatar_url"), github_url=user.get("github_url"), linkedin_url=user.get("linkedin_url"), website_url=user.get("website_url"), location=user.get("location"), skills=user.get("skills", []), created_at=parse_datetime(user["created_at"]))  # type: ignore
 
 
 async def _developer_response(user: dict) -> DeveloperResponse:
-    """Build a DeveloperResponse from a raw MongoDB document including project count."""
-    count = await db.projects.count_documents({"user_username": user["username"]})
+    """Build a DeveloperResponse from a raw Firestore document including project count."""
+    docs = await db.collection("projects").where(filter=FieldFilter("user_username", "==", user["username"])).get()
+    count = len(docs)
     return DeveloperResponse(full_name=user["full_name"], username=user["username"], bio=user.get("bio"), avatar_url=user.get("avatar_url"), github_url=user.get("github_url"), linkedin_url=user.get("linkedin_url"), website_url=user.get("website_url"), location=user.get("location"), skills=user.get("skills", []), created_at=parse_datetime(user["created_at"]), project_count=count)  # type: ignore
 
 
 def _project_response(project: dict) -> ProjectResponse:  # type: ignore
-    """Build a ProjectResponse from a raw MongoDB document."""
+    """Build a ProjectResponse from a raw Firestore document."""
     p = project.copy()
     
     # Ensure ID is a string
@@ -530,7 +547,7 @@ def _ensure_project_visible(project: dict, current_user: Optional[dict]) -> None
 
 
 def _serialize(doc: dict) -> dict:
-    """Sanitize a MongoDB doc for SSE broadcast."""
+    """Sanitize a Firestore doc for SSE broadcast."""
     doc = doc.copy()
     doc.pop("_id", None)
     doc.pop("password", None)
@@ -548,12 +565,13 @@ def _serialize(doc: dict) -> dict:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup — verify MongoDB connection
+    # Startup — verify Firebase connection implicitly or explicitly
     try:
-        await client.admin.command("ping")
-        logger.info("Successfully connected to MongoDB")
+        # Just a dummy fetch to ensure db is accessible
+        await db.collection('users').limit(1).get()
+        logger.info("Successfully connected to Firestore")
     except Exception as e:
-        logger.error("Failed to connect to MongoDB: %s", e)
+        logger.error("Failed to connect to Firestore: %s", e)
 
     # Startup — verify SMTP configuration
     if not all([SMTP_HOST, SMTP_USER, SMTP_PASS]):
@@ -562,104 +580,13 @@ async def lifespan(app: FastAPI):
     else:
         logger.info(f"SMTP configured: {SMTP_USER} @ {SMTP_HOST}:{SMTP_PORT}")
 
-    # Create indexes for performance
-    try:
-        await db.users.create_index("email", unique=True)
-        await db.users.create_index("username", unique=True)
-        await db.projects.create_index("user_email")
-        await db.projects.create_index("user_username")
-        await db.projects.create_index([("created_at", -1)])
-        await db.projects.create_index("project_id", unique=True)
-        await db.blogs.create_index("slug", unique=True)
-        await db.blogs.create_index("blog_id", unique=True)
-        await db.blogs.create_index("author_email")
-        await db.blogs.create_index([("published_at", -1)])
-        await db.blogs.create_index("tags")
-        await db.follows.create_index([("follower_email", 1), ("following_email", 1)], unique=True)
-        await db.reactions.create_index([("blog_id", 1), ("user_email", 1), ("type", 1)], unique=True)
-        await db.bookmarks.create_index([("user_email", 1), ("blog_id", 1)], unique=True)
-        await db.comments.create_index([("blog_id", 1), ("created_at", 1)])
-        logger.info("MongoDB indexes ensured")
-    except Exception as e:
-        logger.warning("Index creation warning (may already exist): %s", e)
-
-    # Start Change Stream watchers as background tasks
-    watcher_tasks = [
-        asyncio.create_task(_watch_projects()),
-        asyncio.create_task(_watch_blogs()),
-        asyncio.create_task(_watch_comments()),
-    ]
-    logger.info("Change Stream watchers started for projects, blogs, comments")
+    # Start Change Stream watchers as background tasks - REMOVED FOR FIREBASE
+    # Realtime updates will rely solely on event_bus.publish calls made during mutations.
 
     yield
 
-    # Shutdown — cancel watchers and close DB
-    for task in watcher_tasks:
-        task.cancel()
-    client.close()
-
-
-# ---------------------------------------------------------------------------
-# Change Stream Watchers
-# ---------------------------------------------------------------------------
-
-_CHANGE_PIPELINE = [{"$match": {"operationType": {"$in": ["insert", "update", "delete"]}}}]
-
-
-async def _watch_projects():
-    """Watch the projects collection and broadcast events."""
-    try:
-        async with db.projects.watch(_CHANGE_PIPELINE, full_document="updateLookup") as stream:
-            async for change in stream:
-                op = change["operationType"]
-                doc = change.get("fullDocument")
-                if op == "insert" and doc:
-                    await event_bus.publish({"type": "project:new", "data": _serialize(doc)})
-                elif op == "update" and doc:
-                    await event_bus.publish({"type": "project:updated", "data": _serialize(doc)})
-                elif op == "delete":
-                    doc_key = str(change["documentKey"]["_id"])
-                    await event_bus.publish({"type": "project:deleted", "data": {"id": doc_key}})
-    except asyncio.CancelledError:
-        pass
-    except Exception as e:
-        logger.error(f"Projects change stream error: {e}")
-
-
-async def _watch_blogs():
-    """Watch the blogs collection and broadcast events."""
-    try:
-        async with db.blogs.watch(_CHANGE_PIPELINE, full_document="updateLookup") as stream:
-            async for change in stream:
-                op = change["operationType"]
-                doc = change.get("fullDocument")
-                if op == "insert" and doc:
-                    await event_bus.publish({"type": "blog:new", "data": _serialize(doc)})
-                elif op == "update" and doc:
-                    await event_bus.publish({"type": "blog:updated", "data": _serialize(doc)})
-                elif op == "delete":
-                    doc_key = str(change["documentKey"]["_id"])
-                    await event_bus.publish({"type": "blog:deleted", "data": {"id": doc_key}})
-    except asyncio.CancelledError:
-        pass
-    except Exception as e:
-        logger.error(f"Blogs change stream error: {e}")
-
-
-async def _watch_comments():
-    """Watch the comments collection and broadcast events."""
-    try:
-        async with db.comments.watch(_CHANGE_PIPELINE, full_document="updateLookup") as stream:
-            async for change in stream:
-                op = change["operationType"]
-                doc = change.get("fullDocument")
-                if op == "insert" and doc:
-                    await event_bus.publish({"type": "comment:new", "data": _serialize(doc)})
-    except asyncio.CancelledError:
-        pass
-    except Exception as e:
-        logger.error(f"Comments change stream error: {e}")
-
+    # Shutdown
+    pass
 
 # ---------------------------------------------------------------------------
 # App & middleware
@@ -696,64 +623,66 @@ api_router = APIRouter(prefix="/api")
 # ---------------------------------------------------------------------------
 
 
-@api_router.post("/auth/register", response_model=Token)
-async def register(user_data: UserRegister):
-    validate_password_strength(user_data.password)
-
-    existing_user = await db.users.find_one({"email": user_data.email})
-    if existing_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
-
-    existing_username = await db.users.find_one({"username": user_data.username})
-    if existing_username:
-        raise HTTPException(status_code=400, detail="Username already taken")
-
-    user_dict = {
-        "email": user_data.email,
-        "password": get_password_hash(user_data.password),
-        "full_name": user_data.full_name,
-        "username": user_data.username,
-        "bio": None,
-        "avatar_url": None,
-        "github_url": None,
-        "linkedin_url": None,
-        "website_url": None,
-        "location": None,
-        "skills": [],
-        "created_at": datetime.now(timezone.utc).isoformat(),
-    }
-
-    await db.users.insert_one(user_dict)
-
-    access_token = create_access_token(data={"sub": user_data.email})
-    user_response = _user_response(user_dict)
-
-    return Token(access_token=access_token, token_type="bearer", user=user_response)  # type: ignore
-
-
-@api_router.post("/auth/login", response_model=Token)
-async def login(user_data: UserLogin):
+@api_router.post("/auth/sync", response_model=UserResponse)
+async def sync_user(
+    data: AuthSyncRequest,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """
+    Syncs a Firebase user with the Firestore users collection.
+    Called after successful sign-in on the frontend.
+    """
+    token = credentials.credentials
     try:
-        logger.info(f"Login attempt for: {user_data.email}")
-        user = await db.users.find_one({"email": user_data.email})
+        decoded_token = firebase_auth.verify_id_token(token)
+        email = decoded_token.get("email")
+        uid = decoded_token.get("uid")
         
-        if not user:
-            logger.warning(f"User not found in DB: {user_data.email}")
-            raise HTTPException(status_code=401, detail="Incorrect email or password")
-        
-        # Verify password
-        if not verify_password(user_data.password, user["password"]):
-            logger.warning(f"Failed login attempt for: {user_data.email}")
-            raise HTTPException(status_code=401, detail="Incorrect email or password")
-
-        logger.info(f"Login successful for: {user_data.email}")
-        access_token = create_access_token(data={"sub": user_data.email})
-        return Token(access_token=access_token, token_type="bearer", user=_user_response(user))  # type: ignore
-    except HTTPException:
-        raise
+        if not email:
+            raise HTTPException(status_code=401, detail="Invalid token: email missing")
     except Exception as e:
-        logger.error(f"Internal error during login: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+        logger.error(f"Sync verification failed: {e}")
+        raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+
+    doc_ref = db.collection("users").document(email)
+    doc = await doc_ref.get()
+    
+    if doc.exists:
+        # Update existing user with latest info from Firebase if provided
+        update_data = {}
+        if data.full_name: update_data["full_name"] = data.full_name
+        if data.avatar_url: update_data["avatar_url"] = data.avatar_url
+        # Always update UID just in case
+        update_data["uid"] = uid
+        
+        await doc_ref.update(update_data)
+        user_dict = (await doc_ref.get()).to_dict()
+    else:
+        # Create new user record
+        # If username not provided, generate one from email
+        username = data.username or email.split("@")[0].lower()
+        # Ensure username uniqueness
+        username_check = await db.collection("users").where(filter=FieldFilter("username", "==", username)).limit(1).get()
+        if username_check:
+            username = f"{username}_{str(uuid.uuid4())[:4]}"
+
+        user_dict = {
+            "email": email,
+            "uid": uid,
+            "full_name": data.full_name or email.split("@")[0],
+            "username": username,
+            "bio": None,
+            "avatar_url": data.avatar_url,
+            "github_url": None,
+            "linkedin_url": None,
+            "website_url": None,
+            "location": None,
+            "skills": [],
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+        await doc_ref.set(user_dict)
+
+    return _user_response(user_dict)
 
 
 @api_router.get("/auth/me", response_model=UserResponse)
@@ -766,9 +695,10 @@ async def update_me(user_update: UserUpdate, current_user: dict = Depends(get_cu
     update_data = {k: v for k, v in user_update.model_dump().items() if v is not None}
 
     if update_data:
-        await db.users.update_one({"email": current_user["email"]}, {"$set": update_data})
+        await db.collection("users").document(current_user["email"]).update(update_data)
 
-    updated_user = await db.users.find_one({"email": current_user["email"]}, {"_id": 0})
+    doc = await db.collection("users").document(current_user["email"]).get()
+    updated_user = doc.to_dict()
     return _user_response(updated_user)
 
 
@@ -784,7 +714,8 @@ async def forgot_password(request: ForgotPasswordRequest):
             detail="Password reset email service is not configured. Please contact support or try again later.",
         )
 
-    user = await db.users.find_one({"email": request.email})
+    doc = await db.collection("users").document(request.email).get()
+    user = doc.to_dict() if doc.exists else None
     if not user:
         # Return the same generic message so as not to reveal whether an account exists
         logger.warning(f"Password reset requested for non-existent email: {request.email}")
@@ -795,21 +726,16 @@ async def forgot_password(request: ForgotPasswordRequest):
     token_data = {"sub": request.email, "type": "reset", "jti": reset_token_id, "exp": expire}
     reset_token = jwt.encode(token_data, SECRET_KEY, algorithm=ALGORITHM)
 
-    await db.users.update_one(
-        {"email": request.email},
-        {
-            "$set": {
-                "reset_token_id": reset_token_id,
-                "reset_token_expires_at": expire.isoformat(),
-            }
-        },
-    )
+    await db.collection("users").document(request.email).update({
+        "reset_token_id": reset_token_id,
+        "reset_token_expires_at": expire.isoformat(),
+    })
     email_sent = await send_reset_email(request.email, reset_token)
     if not email_sent:
-        await db.users.update_one(
-            {"email": request.email},
-            {"$unset": {"reset_token_id": "", "reset_token_expires_at": ""}},
-        )
+        await db.collection("users").document(request.email).update({
+            "reset_token_id": firestore.DELETE_FIELD, 
+            "reset_token_expires_at": firestore.DELETE_FIELD
+        })
         raise HTTPException(
             status_code=502,
             detail="We couldn't send the reset email right now. Please try again later.",
@@ -839,7 +765,8 @@ async def validate_reset_token(token: str):
     if not email or not token_id:
         raise HTTPException(status_code=400, detail="Invalid or expired reset token")
 
-    user = await db.users.find_one({"email": email})
+    doc = await db.collection("users").document(email).get()
+    user = doc.to_dict() if doc.exists else None
     if not user:
         raise HTTPException(status_code=400, detail="Invalid or expired reset token")
 
@@ -850,10 +777,10 @@ async def validate_reset_token(token: str):
 
     if parse_datetime(stored_expiry) < datetime.now(timezone.utc):
         # Clean up expired token
-        await db.users.update_one(
-            {"email": email},
-            {"$unset": {"reset_token_id": "", "reset_token_expires_at": ""}},
-        )
+        await db.collection("users").document(email).update({
+            "reset_token_id": firestore.DELETE_FIELD, 
+            "reset_token_expires_at": firestore.DELETE_FIELD
+        })
         raise HTTPException(status_code=400, detail="This reset link has expired. Please request a new one.")
 
     return {"valid": True, "email": email}
@@ -873,7 +800,8 @@ async def reset_password(data: ResetPassword):
     if not email or not token_id:
         raise HTTPException(status_code=400, detail="Invalid or expired reset token")
 
-    user = await db.users.find_one({"email": email})
+    doc = await db.collection("users").document(email).get()
+    user = doc.to_dict() if doc.exists else None
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -883,91 +811,22 @@ async def reset_password(data: ResetPassword):
         raise HTTPException(status_code=400, detail="This reset link is invalid or has already been used")
 
     if parse_datetime(stored_expiry) < datetime.now(timezone.utc):
-        await db.users.update_one(
-            {"email": email},
-            {"$unset": {"reset_token_id": "", "reset_token_expires_at": ""}},
-        )
+        await db.collection("users").document(email).update({
+            "reset_token_id": firestore.DELETE_FIELD, 
+            "reset_token_expires_at": firestore.DELETE_FIELD
+        })
         raise HTTPException(status_code=400, detail="Invalid or expired reset token")
 
     validate_password_strength(data.new_password)
 
     hashed_password = get_password_hash(data.new_password)
-    await db.users.update_one(
-        {"email": email},
-        {
-            "$set": {"password": hashed_password},
-            "$unset": {"reset_token_id": "", "reset_token_expires_at": ""},
-        },
-    )
+    await db.collection("users").document(email).update({
+        "password": hashed_password,
+        "reset_token_id": firestore.DELETE_FIELD,
+        "reset_token_expires_at": firestore.DELETE_FIELD,
+    })
 
     return {"message": "Password reset successfully"}
-
-
-@api_router.post("/auth/google", response_model=Token)
-async def google_auth(data: GoogleAuthRequest):
-    """Authenticate via Google OAuth 2.0 ID token."""
-    try:
-        # Verify the Google ID token
-        idinfo = google_id_token.verify_oauth2_token(
-            data.credential,
-            google_requests.Request(),
-            GOOGLE_CLIENT_ID,
-        )
-
-        email = idinfo.get("email")
-        full_name = idinfo.get("name", "")
-        avatar_url = idinfo.get("picture")
-
-        if not email:
-            raise HTTPException(status_code=400, detail="Google token missing email")
-
-        # Check if user exists
-        user = await db.users.find_one({"email": email}, {"_id": 0})
-
-        if user:
-            # Existing user → login
-            logger.info(f"Google login for existing user: {email}")
-            access_token = create_access_token(data={"sub": email})
-            return Token(access_token=access_token, token_type="bearer", user=_user_response(user))  # type: ignore
-
-        # New user → register
-        logger.info(f"Google signup for new user: {email}")
-
-        # Generate a unique username from the email prefix
-        base_username = re.sub(r"[^a-zA-Z0-9]", "", email.split("@")[0]).lower()
-        if not base_username:
-            base_username = "user"
-        username = base_username
-        # If taken, append a random suffix
-        while await db.users.find_one({"username": username}):
-            username = f"{base_username}{str(uuid.uuid4())[:6]}"  # type: ignore
-
-        user_dict = {
-            "email": email,
-            "password": None,  # No password for Google-auth users
-            "full_name": full_name or username,
-            "username": username,
-            "bio": None,
-            "avatar_url": avatar_url,
-            "github_url": None,
-            "linkedin_url": None,
-            "website_url": None,
-            "location": None,
-            "skills": [],
-            "auth_provider": "google",
-            "created_at": datetime.now(timezone.utc).isoformat(),
-        }
-
-        await db.users.insert_one(user_dict)
-
-        access_token = create_access_token(data={"sub": email})
-        return Token(access_token=access_token, token_type="bearer", user=_user_response(user_dict))  # type: ignore
-
-    except ValueError as e:
-        logger.error(f"Google token verification failed: {e}")
-        raise HTTPException(status_code=401, detail="Invalid Google token")
-    except HTTPException:
-        raise
 
 
 # ---------------------------------------------------------------------------
@@ -990,8 +849,15 @@ async def get_developers(
             ]
         }
     
-    users_cursor = db.users.find(query, {"password": 0, "_id": 0}).skip(skip).limit(limit)
-    users = await users_cursor.to_list(length=limit)
+    # Firestore doesn't support OR queries natively like MongoDB for text search, 
+    # and doesn't do regex. We fetch all users and filter in memory since user base is small.
+    # We apply limit and skip in memory too.
+    all_users_docs = await db.collection("users").get()
+    all_users = [d.to_dict() for d in all_users_docs]
+    if q:
+        q_lower = q.lower()
+        all_users = [u for u in all_users if q_lower in u.get("full_name", "").lower() or q_lower in u.get("username", "").lower()]
+    users = all_users[skip : skip + limit]
     
     developers = []
     for u in users:
@@ -1003,7 +869,8 @@ async def get_developers(
 
 @api_router.get("/users/{username}", response_model=UserResponse)
 async def get_user_by_username(username: str):
-    user = await db.users.find_one({"username": username}, {"_id": 0, "password": 0})
+    docs = await db.collection("users").where(filter=FieldFilter("username", "==", username)).limit(1).get()
+    user = docs[0].to_dict() if docs else None
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return _user_response(user)
@@ -1020,19 +887,18 @@ async def follow_user(username: str, current_user: dict = Depends(get_current_us
     if current_user["username"] == username:
         raise HTTPException(status_code=400, detail="Cannot follow yourself")
 
-    target = await db.users.find_one({"username": username})
+    docs = await db.collection("users").where(filter=FieldFilter("username", "==", username)).limit(1).get()
+    target = docs[0].to_dict() if docs else None
     if not target:
         raise HTTPException(status_code=404, detail="User not found")
 
     # Prevent duplicate follows
-    existing = await db.follows.find_one({
-        "follower_email": current_user["email"],
-        "following_email": target["email"],
-    })
+    existing_doc = await db.collection("follows").document(f"{current_user['email']}||{target['email']}").get()
+    existing = existing_doc.to_dict() if existing_doc.exists else None
     if existing:
         return {"message": "Already following"}
 
-    await db.follows.insert_one({
+    await db.collection("follows").document(f"{current_user['email']}||{target['email']}").set({
         "follower_email": current_user["email"],
         "follower_username": current_user["username"],
         "following_email": target["email"],
@@ -1045,70 +911,67 @@ async def follow_user(username: str, current_user: dict = Depends(get_current_us
 @api_router.delete("/users/{username}/follow")
 async def unfollow_user(username: str, current_user: dict = Depends(get_current_user)):
     """Unfollow a user by username."""
-    target = await db.users.find_one({"username": username})
+    docs = await db.collection("users").where(filter=FieldFilter("username", "==", username)).limit(1).get()
+    target = docs[0].to_dict() if docs else None
     if not target:
         raise HTTPException(status_code=404, detail="User not found")
 
-    await db.follows.delete_one({
-        "follower_email": current_user["email"],
-        "following_email": target["email"],
-    })
+    await db.collection("follows").document(f"{current_user['email']}||{target['email']}").delete()
     return {"message": "Unfollowed successfully"}
 
 
 @api_router.get("/users/{username}/followers")
 async def get_followers(username: str):
     """Get list of users who follow this user."""
-    target = await db.users.find_one({"username": username})
+    docs = await db.collection("users").where(filter=FieldFilter("username", "==", username)).limit(1).get()
+    target = docs[0].to_dict() if docs else None
     if not target:
         raise HTTPException(status_code=404, detail="User not found")
 
-    follows = await db.follows.find(
-        {"following_email": target["email"]}, {"_id": 0}
-    ).to_list(500)
+    follows_docs = await db.collection("follows").where(filter=FieldFilter("following_email", "==", target["email"])).limit(500).get()
+    follows = [d.to_dict() for d in follows_docs]
 
     follower_emails = [f["follower_email"] for f in follows]
     if not follower_emails:
         return []
 
-    users = await db.users.find(
-        {"email": {"$in": follower_emails}}, {"_id": 0, "password": 0}
-    ).to_list(500)
+    user_refs = [db.collection("users").document(email) for email in follower_emails]
+    user_docs = await db.get_all(user_refs)
+    users = [doc.to_dict() for doc in user_docs if doc.exists]
     return users
 
 
 @api_router.get("/users/{username}/following")
 async def get_following(username: str):
     """Get list of users this user follows."""
-    target = await db.users.find_one({"username": username})
+    docs = await db.collection("users").where(filter=FieldFilter("username", "==", username)).limit(1).get()
+    target = docs[0].to_dict() if docs else None
     if not target:
         raise HTTPException(status_code=404, detail="User not found")
 
-    follows = await db.follows.find(
-        {"follower_email": target["email"]}, {"_id": 0}
-    ).to_list(500)
+    follows_docs = await db.collection("follows").where(filter=FieldFilter("follower_email", "==", target["email"])).limit(500).get()
+    follows = [d.to_dict() for d in follows_docs]
 
     following_emails = [f["following_email"] for f in follows]
     if not following_emails:
         return []
 
-    users = await db.users.find(
-        {"email": {"$in": following_emails}}, {"_id": 0, "password": 0}
-    ).to_list(500)
+    user_refs = [db.collection("users").document(email) for email in following_emails]
+    user_docs = await db.get_all(user_refs)
+    users = [doc.to_dict() for doc in user_docs if doc.exists]
     return users
 
 
 @api_router.get("/users/{username}/is-following")
 async def check_is_following(username: str, current_user: dict = Depends(get_current_user)):
     """Check if current user follows this user."""
-    target = await db.users.find_one({"username": username})
+    docs = await db.collection("users").where(filter=FieldFilter("username", "==", username)).limit(1).get()
+    target = docs[0].to_dict() if docs else None
     if not target:
         raise HTTPException(status_code=404, detail="User not found")
 
-    existing = await db.follows.find_one({
-        "follower_email": current_user["email"],
-        "following_email": target["email"],
-    })
+    existing_doc = await db.collection("follows").document(f"{current_user['email']}||{target['email']}").get()
+    existing = existing_doc.to_dict() if existing_doc.exists else None
     return {"is_following": existing is not None}
 
 
@@ -1130,7 +993,7 @@ async def create_project(project_data: ProjectCreate, current_user: dict = Depen
     project_dict["created_at"] = now
     project_dict["updated_at"] = now
 
-    await db.projects.insert_one(project_dict)
+    await db.collection("projects").document(project_dict["project_id"]).set(project_dict)
 
     # Emit real-time event (faster than waiting for Change Stream)
     response = _project_response(project_dict)
@@ -1159,7 +1022,19 @@ async def get_all_projects(
         query["user_email"] = {"$ne": current_user["email"]}
         query["github_url"] = {"$exists": True, "$nin": [None, ""]}
 
-    projects = await db.projects.find(query, {"_id": 0}).sort("created_at", -1).to_list(100)
+    col_ref = db.collection("projects")
+    if category:
+        col_ref = col_ref.where(filter=FieldFilter("category", "==", category))
+    if status:
+        col_ref = col_ref.where(filter=FieldFilter("status", "==", status))
+    col_ref = col_ref.where(filter=FieldFilter("visibility", "==", "public"))
+    col_ref = col_ref.order_by("created_at", direction=firestore.Query.DESCENDING).limit(100)
+    
+    docs = await col_ref.get()
+    projects = [d.to_dict() for d in docs]
+    
+    if exclude_self and current_user:
+        projects = [p for p in projects if p.get("user_email") != current_user["email"] and p.get("github_url")]
     return [_project_response(p) for p in projects]
 
 
@@ -1167,11 +1042,8 @@ async def get_all_projects(
 async def get_my_projects(current_user: dict = Depends(get_current_user)):
     try:
         logger.info(f"Fetching projects for user: {current_user['email']}")
-        projects = (
-            await db.projects.find({"user_email": current_user["email"]}, {"_id": 0})
-            .sort("created_at", -1)
-            .to_list(100)
-        )
+        docs = await db.collection("projects").where(filter=FieldFilter("user_email", "==", current_user["email"])).order_by("created_at", direction=firestore.Query.DESCENDING).limit(100).get()
+        projects = [d.to_dict() for d in docs]
         logger.info(f"Found {len(projects)} projects for {current_user['email']}")
         
         response_data = []
@@ -1194,17 +1066,19 @@ async def get_user_projects(username: str, current_user: Optional[dict] = Depend
     if not current_user or current_user.get("username") != username:
         query["visibility"] = "public"
 
-    projects = (
-        await db.projects.find(query, {"_id": 0})
-        .sort("created_at", -1)
-        .to_list(100)
-    )
+    col_ref = db.collection("projects").where(filter=FieldFilter("user_username", "==", username))
+    if "visibility" in query:
+        col_ref = col_ref.where(filter=FieldFilter("visibility", "==", "public"))
+    col_ref = col_ref.order_by("created_at", direction=firestore.Query.DESCENDING).limit(100)
+    docs = await col_ref.get()
+    projects = [d.to_dict() for d in docs]
     return [_project_response(p) for p in projects]
 
 
 @api_router.get("/projects/{project_id}", response_model=ProjectResponse)
 async def get_project(project_id: str, current_user: Optional[dict] = Depends(get_optional_user)):
-    project = await db.projects.find_one({"project_id": project_id}, {"_id": 0})
+    doc = await db.collection("projects").document(project_id).get()
+    project = doc.to_dict() if doc.exists else None
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     _ensure_project_visible(project, current_user)
@@ -1217,7 +1091,8 @@ async def update_project(
     project_update: ProjectUpdate,
     current_user: dict = Depends(get_current_user),
 ):
-    project = await db.projects.find_one({"project_id": project_id})
+    doc = await db.collection("projects").document(project_id).get()
+    project = doc.to_dict() if doc.exists else None
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
 
@@ -1227,10 +1102,11 @@ async def update_project(
     update_data = {k: v for k, v in project_update.model_dump().items() if v is not None}
     update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
 
-    await db.projects.update_one({"project_id": project_id}, {"$set": update_data})
+    await db.collection("projects").document(project_id).update(update_data)
 
-    updated_project = await db.projects.find_one({"project_id": project_id}, {"_id": 0})
-    response = _project_response(updated_project)
+    updated_doc = await db.collection("projects").document(project_id).get()
+    project = updated_doc.to_dict() if updated_doc.exists else None
+    response = _project_response(project)
     await event_bus.publish({
         "type": "project:updated",
         "data": response.model_dump(mode="json"),
@@ -1241,7 +1117,8 @@ async def update_project(
 @api_router.delete("/projects/{project_id}")
 async def delete_project(project_id: str, current_user: dict = Depends(get_current_user)):
     logger.info(f"Attempting to delete project: {project_id} by user: {current_user['email']}")
-    project = await db.projects.find_one({"project_id": project_id})
+    doc = await db.collection("projects").document(project_id).get()
+    project = doc.to_dict() if doc.exists else None
     if not project:
         logger.warning(f"Project not found: {project_id}")
         raise HTTPException(status_code=404, detail="Project not found")
@@ -1250,8 +1127,8 @@ async def delete_project(project_id: str, current_user: dict = Depends(get_curre
         logger.warning(f"Unauthorized deletion attempt for project {project_id} by {current_user['email']}")
         raise HTTPException(status_code=403, detail="Not authorized to delete this project")
 
-    result = await db.projects.delete_one({"project_id": project_id})
-    logger.info(f"Project deletion result for {project_id}: {result.deleted_count} documents deleted")
+    await db.collection("projects").document(project_id).delete()
+    logger.info(f"Project deleted: {project_id}")
 
     await event_bus.publish({
         "type": "project:deleted",
@@ -1265,16 +1142,14 @@ async def delete_project(project_id: str, current_user: dict = Depends(get_curre
 
 @api_router.get("/projects/{project_id}/comments", response_model=List[ProjectCommentResponse])
 async def get_project_comments(project_id: str, current_user: Optional[dict] = Depends(get_optional_user)):
-    project = await db.projects.find_one({"project_id": project_id}, {"_id": 0})
+    doc = await db.collection("projects").document(project_id).get()
+    project = doc.to_dict() if doc.exists else None
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     _ensure_project_visible(project, current_user)
 
-    comments = (
-        await db.project_comments.find({"project_id": project_id}, {"_id": 0})
-        .sort("created_at", -1)
-        .to_list(100)
-    )
+    docs = await db.collection("project_comments").where(filter=FieldFilter("project_id", "==", project_id)).order_by("created_at", direction=firestore.Query.DESCENDING).limit(100).get()
+    comments = [d.to_dict() for d in docs]
     return comments
 
 
@@ -1284,7 +1159,8 @@ async def add_project_comment(
     comment: ProjectComment,
     current_user: dict = Depends(get_current_user),
 ):
-    project = await db.projects.find_one({"project_id": project_id})
+    doc = await db.collection("projects").document(project_id).get()
+    project = doc.to_dict() if doc.exists else None
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     _ensure_project_visible(project, current_user)
@@ -1298,7 +1174,7 @@ async def add_project_comment(
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
 
-    await db.project_comments.insert_one(new_comment)
+    await db.collection("project_comments").document(new_comment["comment_id"]).set(new_comment)
     
     # Return response
     response_data = new_comment.copy()
@@ -1319,7 +1195,7 @@ async def add_project_comment(
 
 
 def _blog_response(blog: dict) -> BlogResponse:
-    """Build a BlogResponse from a raw MongoDB document."""
+    """Build a BlogResponse from a raw Firestore document."""
     b = blog.copy()
     if "_id" in b:
         del b["_id"]  # type: ignore
@@ -1361,7 +1237,7 @@ async def create_blog(blog_data: BlogCreate, current_user: dict = Depends(get_cu
         blog_dict["published_at"] = now
     else:
         blog_dict["published_at"] = None
-    await db.blogs.insert_one(blog_dict)
+    await db.collection("blogs").document(blog_dict["blog_id"]).set(blog_dict)
 
     response = _blog_response(blog_dict)
     if blog_data.status == "published":
@@ -1385,23 +1261,21 @@ async def get_all_blogs(
         query["tags"] = tag
     if category:
         query["category"] = category
-    blogs = (
-        await db.blogs.find(query, {"_id": 0})
-        .sort("published_at", -1)
-        .skip(skip)
-        .limit(limit)
-        .to_list(limit)
-    )
+    col_ref = db.collection("blogs").where(filter=FieldFilter("status", "==", "published"))
+    if tag:
+        col_ref = col_ref.where(filter=FieldFilter("tags", "array_contains", tag))
+    if category:
+        col_ref = col_ref.where(filter=FieldFilter("category", "==", category))
+    col_ref = col_ref.order_by("published_at", direction=firestore.Query.DESCENDING).offset(skip).limit(limit)
+    docs = await col_ref.get()
+    blogs = [d.to_dict() for d in docs]
     return [_blog_response(b) for b in blogs]
 
 
 @api_router.get("/blogs/my", response_model=List[BlogResponse])
 async def get_my_blogs(current_user: dict = Depends(get_current_user)):
-    blogs = (
-        await db.blogs.find({"author_email": current_user["email"]}, {"_id": 0})
-        .sort("updated_at", -1)
-        .to_list(100)
-    )
+    docs = await db.collection("blogs").where(filter=FieldFilter("author_email", "==", current_user["email"])).order_by("updated_at", direction=firestore.Query.DESCENDING).limit(100).get()
+    blogs = [d.to_dict() for d in docs]
     return [_blog_response(b) for b in blogs]
 
 
@@ -1410,14 +1284,15 @@ async def get_blog_by_slug(
     slug: str,
     current_user: Optional[dict] = Depends(get_optional_user),
 ):
-    blog = await db.blogs.find_one({"slug": slug}, {"_id": 0})
+    docs = await db.collection("blogs").where(filter=FieldFilter("slug", "==", slug)).limit(1).get()
+    blog = docs[0].to_dict() if docs else None
     if not blog:
         raise HTTPException(status_code=404, detail="Blog not found")
 
     # Only increment view_count if the viewer is NOT the author
     is_author = current_user and current_user.get("email") == blog.get("author_email")
     if not is_author:
-        await db.blogs.update_one({"slug": slug}, {"$inc": {"view_count": 1}})
+        await db.collection("blogs").document(blog["blog_id"]).update({"view_count": firestore.Increment(1)})
         blog["view_count"] = blog.get("view_count", 0) + 1
 
     return _blog_response(blog)
@@ -1429,7 +1304,8 @@ async def update_blog(
     blog_update: BlogUpdate,
     current_user: dict = Depends(get_current_user),
 ):
-    blog = await db.blogs.find_one({"blog_id": blog_id})
+    doc = await db.collection("blogs").document(blog_id).get()
+    blog = doc.to_dict() if doc.exists else None
     if not blog:
         raise HTTPException(status_code=404, detail="Blog not found")
     if blog["author_email"] != current_user["email"]:
@@ -1441,8 +1317,9 @@ async def update_blog(
         update_data["reading_time_minutes"] = calculate_reading_time(update_data["content_markdown"])
     update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
 
-    await db.blogs.update_one({"blog_id": blog_id}, {"$set": update_data})
-    updated = await db.blogs.find_one({"blog_id": blog_id}, {"_id": 0})
+    await db.collection("blogs").document(blog_id).update(update_data)
+    doc = await db.collection("blogs").document(blog_id).get()
+    updated = doc.to_dict() if doc.exists else None
     response = _blog_response(updated)
 
     await event_bus.publish({
@@ -1456,7 +1333,8 @@ async def update_blog(
 @api_router.delete("/blogs/{blog_id}")
 async def delete_blog(blog_id: str, current_user: dict = Depends(get_current_user)):
     logger.info(f"Attempting to delete blog: {blog_id} by user: {current_user['email']}")
-    blog = await db.blogs.find_one({"blog_id": blog_id})
+    doc = await db.collection("blogs").document(blog_id).get()
+    blog = doc.to_dict() if doc.exists else None
     if not blog:
         logger.warning(f"Blog not found: {blog_id}")
         raise HTTPException(status_code=404, detail="Blog not found")
@@ -1464,9 +1342,13 @@ async def delete_blog(blog_id: str, current_user: dict = Depends(get_current_use
         logger.warning(f"Unauthorized deletion attempt for blog {blog_id} by {current_user['email']}")
         raise HTTPException(status_code=403, detail="Not authorized")
     
-    await db.blogs.delete_one({"blog_id": blog_id})
-    await db.comments.delete_many({"blog_id": blog_id})
-    await db.reactions.delete_many({"blog_id": blog_id})
+    await db.collection("blogs").document(blog_id).delete()
+    comments_docs = await db.collection("comments").where(filter=FieldFilter("blog_id", "==", blog_id)).get()
+    for d in comments_docs:
+        await d.reference.delete()
+    reactions_docs = await db.collection("reactions").where(filter=FieldFilter("blog_id", "==", blog_id)).get()
+    for d in reactions_docs:
+        await d.reference.delete()
     logger.info(f"Blog {blog_id} and associated data deleted successfully")
 
     await event_bus.publish({
@@ -1493,18 +1375,16 @@ async def upload_blog_image(
         )
 
     # Read in chunks, enforce 10 MB limit
-    content = b""
-    async for chunk in file:
-        content += chunk
-        if len(content) > MAX_UPLOAD_BYTES:
-            raise HTTPException(status_code=413, detail="File too large. Maximum size is 10 MB.")
+    content = await file.read()
+    if len(content) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="File too large. Maximum size is 10 MB.")
 
-    filename = f"{uuid.uuid4()}{ext}"
-    file_path = UPLOAD_DIR / filename
+    filename = f"blogs/{uuid.uuid4()}{ext}"
     try:
-        file_path.write_bytes(content)
-        file_url = f"/uploads/{filename}"
-        return {"url": file_url}
+        blob = bucket.blob(filename)
+        blob.upload_from_string(content, content_type=file.content_type)
+        blob.make_public()
+        return {"url": blob.public_url}
     except Exception as e:
         logger.error(f"Image upload failed: {e}")
         raise HTTPException(status_code=500, detail="Failed to upload image")
@@ -1523,17 +1403,16 @@ async def upload_project_image(
             detail=f"Invalid file. Allowed image types: {', '.join(sorted(ALLOWED_IMAGE_EXTENSIONS))}",
         )
 
-    content = b""
-    while chunk := await file.read(1024 * 1024):
-        content += chunk
-        if len(content) > MAX_UPLOAD_BYTES:
-            raise HTTPException(status_code=413, detail="File too large. Maximum size is 10 MB.")
+    content = await file.read()
+    if len(content) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="File too large. Maximum size is 10 MB.")
 
-    filename = f"project_{uuid.uuid4()}{ext}"
-    file_path = UPLOAD_DIR / filename
+    filename = f"projects/images/{uuid.uuid4()}{ext}"
     try:
-        file_path.write_bytes(content)
-        return {"url": f"/uploads/{filename}", "filename": file.filename}
+        blob = bucket.blob(filename)
+        blob.upload_from_string(content, content_type=file.content_type)
+        blob.make_public()
+        return {"url": blob.public_url, "filename": file.filename}
     except Exception as e:
         logger.error(f"Project image upload failed: {e}")
         raise HTTPException(status_code=500, detail="Failed to upload image")
@@ -1554,19 +1433,16 @@ async def upload_project_document(
             detail=f"Invalid file type. Allowed: {', '.join(ALLOWED_DOC_EXTENSIONS)}"
         )
 
-    # Read in chunks, enforce 10 MB limit
-    content = b""
-    async for chunk in file:
-        content += chunk
-        if len(content) > MAX_UPLOAD_BYTES:
-            raise HTTPException(status_code=413, detail="File too large. Maximum size is 10 MB.")
+    content = await file.read()
+    if len(content) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="File too large. Maximum size is 10 MB.")
 
-    filename = f"doc_{uuid.uuid4()}{ext}"
-    file_path = UPLOAD_DIR / filename
+    filename = f"projects/docs/{uuid.uuid4()}{ext}"
     try:
-        file_path.write_bytes(content)
-        file_url = f"/uploads/{filename}"
-        return {"url": file_url, "filename": file.filename}
+        blob = bucket.blob(filename)
+        blob.upload_from_string(content, content_type=file.content_type)
+        blob.make_public()
+        return {"url": blob.public_url, "filename": file.filename}
     except Exception as e:
         logger.error(f"Document upload failed: {e}")
         raise HTTPException(status_code=500, detail="Failed to upload document")
@@ -1574,17 +1450,16 @@ async def upload_project_document(
 
 @api_router.post("/blogs/{blog_id}/publish", response_model=BlogResponse)
 async def publish_blog(blog_id: str, current_user: dict = Depends(get_current_user)):
-    blog = await db.blogs.find_one({"blog_id": blog_id})
+    doc = await db.collection("blogs").document(blog_id).get()
+    blog = doc.to_dict() if doc.exists else None
     if not blog:
         raise HTTPException(status_code=404, detail="Blog not found")
     if blog["author_email"] != current_user["email"]:
         raise HTTPException(status_code=403, detail="Not authorized")
     now = datetime.now(timezone.utc).isoformat()
-    await db.blogs.update_one(
-        {"blog_id": blog_id},
-        {"$set": {"status": "published", "published_at": now, "updated_at": now}},
-    )
-    updated = await db.blogs.find_one({"blog_id": blog_id}, {"_id": 0})
+    await db.collection("blogs").document(blog_id).update({"status": "published", "published_at": now, "updated_at": now})
+    doc = await db.collection("blogs").document(blog_id).get()
+    updated = doc.to_dict() if doc.exists else None
     response = _blog_response(updated)
 
     await event_bus.publish({
@@ -1597,17 +1472,16 @@ async def publish_blog(blog_id: str, current_user: dict = Depends(get_current_us
 
 @api_router.post("/blogs/{blog_id}/unpublish", response_model=BlogResponse)
 async def unpublish_blog(blog_id: str, current_user: dict = Depends(get_current_user)):
-    blog = await db.blogs.find_one({"blog_id": blog_id})
+    doc = await db.collection("blogs").document(blog_id).get()
+    blog = doc.to_dict() if doc.exists else None
     if not blog:
         raise HTTPException(status_code=404, detail="Blog not found")
     if blog["author_email"] != current_user["email"]:
         raise HTTPException(status_code=403, detail="Not authorized")
     now = datetime.now(timezone.utc).isoformat()
-    await db.blogs.update_one(
-        {"blog_id": blog_id},
-        {"$set": {"status": "draft", "published_at": None, "updated_at": now}},
-    )
-    updated = await db.blogs.find_one({"blog_id": blog_id}, {"_id": 0})
+    await db.collection("blogs").document(blog_id).update({"status": "draft", "published_at": None, "updated_at": now})
+    doc = await db.collection("blogs").document(blog_id).get()
+    updated = doc.to_dict() if doc.exists else None
     return _blog_response(updated)
 
 
@@ -1619,7 +1493,8 @@ async def add_comment(
     comment_data: CommentCreate,
     current_user: dict = Depends(get_current_user),
 ):
-    blog = await db.blogs.find_one({"blog_id": blog_id})
+    doc = await db.collection("blogs").document(blog_id).get()
+    blog = doc.to_dict() if doc.exists else None
     if not blog:
         raise HTTPException(status_code=404, detail="Blog not found")
     now = datetime.now(timezone.utc).isoformat()
@@ -1634,8 +1509,8 @@ async def add_comment(
         "upvotes": 0,
         "created_at": now,
     }
-    await db.comments.insert_one(comment)
-    await db.blogs.update_one({"blog_id": blog_id}, {"$inc": {"comment_count": 1}})
+    await db.collection("comments").document(comment["comment_id"]).set(comment)
+    await db.collection("blogs").document(blog_id).update({"comment_count": firestore.Increment(1)})
     comment.pop("_id", None)
     comment["created_at"] = parse_datetime(comment["created_at"])
     return CommentResponse(**comment)
@@ -1643,11 +1518,8 @@ async def add_comment(
 
 @api_router.get("/blogs/{blog_id}/comments", response_model=List[CommentResponse])
 async def get_comments(blog_id: str):
-    comments = (
-        await db.comments.find({"blog_id": blog_id}, {"_id": 0})
-        .sort("created_at", 1)
-        .to_list(200)
-    )
+    docs = await db.collection("comments").where(filter=FieldFilter("blog_id", "==", blog_id)).order_by("created_at").limit(200).get()
+    comments = [d.to_dict() for d in docs]
     result = []
     for c in comments:
         c["created_at"] = parse_datetime(c["created_at"])
@@ -1667,34 +1539,32 @@ async def toggle_reaction(
     if reaction_data.type not in valid_types:
         raise HTTPException(status_code=400, detail=f"Invalid type. Use: {valid_types}")
 
-    existing = await db.reactions.find_one({
-        "blog_id": blog_id,
-        "user_email": current_user["email"],
-        "type": reaction_data.type,
-    })
+    doc_id = f"{blog_id}||{current_user['email']}||{reaction_data.type}"
+    existing_doc = await db.collection("reactions").document(doc_id).get()
+    existing = existing_doc.to_dict() if existing_doc.exists else None
     if existing:
-        await db.reactions.delete_one({"_id": existing["_id"]})
-        await db.blogs.update_one({"blog_id": blog_id}, {"$inc": {"reaction_count": -1}})
+        await db.collection("reactions").document(doc_id).delete()
+        await db.collection("blogs").document(blog_id).update({"reaction_count": firestore.Increment(-1)})
         return {"action": "removed", "type": reaction_data.type}
     else:
-        await db.reactions.insert_one({
+        await db.collection("reactions").document(doc_id).set({
             "blog_id": blog_id,
             "user_email": current_user["email"],
             "type": reaction_data.type,
             "created_at": datetime.now(timezone.utc).isoformat(),
         })
-        await db.blogs.update_one({"blog_id": blog_id}, {"$inc": {"reaction_count": 1}})
+        await db.collection("blogs").document(blog_id).update({"reaction_count": firestore.Increment(1)})
         return {"action": "added", "type": reaction_data.type}
 
 
 @api_router.get("/blogs/{blog_id}/reactions")
 async def get_reactions(blog_id: str):
-    pipeline = [
-        {"$match": {"blog_id": blog_id}},
-        {"$group": {"_id": "$type", "count": {"$sum": 1}}},
-    ]
-    result = await db.reactions.aggregate(pipeline).to_list(10)
-    return {r["_id"]: r["count"] for r in result}
+    docs = await db.collection("reactions").where(filter=FieldFilter("blog_id", "==", blog_id)).get()
+    counts = {}
+    for d in docs:
+        t = d.to_dict()["type"]
+        counts[t] = counts.get(t, 0) + 1
+    return counts
 
 
 # --- Bookmarks ---
@@ -1704,15 +1574,14 @@ async def toggle_bookmark(
     blog_id: str,
     current_user: dict = Depends(get_current_user),
 ):
-    existing = await db.bookmarks.find_one({
-        "user_email": current_user["email"],
-        "blog_id": blog_id,
-    })
+    doc_id = f"{current_user['email']}||{blog_id}"
+    existing_doc = await db.collection("bookmarks").document(doc_id).get()
+    existing = existing_doc.to_dict() if existing_doc.exists else None
     if existing:
-        await db.bookmarks.delete_one({"_id": existing["_id"]})
+        await db.collection("bookmarks").document(doc_id).delete()
         return {"action": "removed"}
     else:
-        await db.bookmarks.insert_one({
+        await db.collection("bookmarks").document(doc_id).set({
             "user_email": current_user["email"],
             "blog_id": blog_id,
             "created_at": datetime.now(timezone.utc).isoformat(),
@@ -1722,11 +1591,14 @@ async def toggle_bookmark(
 
 @api_router.get("/bookmarks", response_model=List[BlogResponse])
 async def get_bookmarks(current_user: dict = Depends(get_current_user)):
-    bookmarks = await db.bookmarks.find(
-        {"user_email": current_user["email"]}, {"_id": 0}
-    ).to_list(100)
+    docs = await db.collection("bookmarks").where(filter=FieldFilter("user_email", "==", current_user["email"])).limit(100).get()
+    bookmarks = [d.to_dict() for d in docs]
     blog_ids = [b["blog_id"] for b in bookmarks]
-    blogs = await db.blogs.find({"blog_id": {"$in": blog_ids}}, {"_id": 0}).to_list(100)
+    if not blog_ids:
+        return []
+    blog_refs = [db.collection("blogs").document(bid) for bid in blog_ids]
+    blog_docs = await db.get_all(blog_refs)
+    blogs = [doc.to_dict() for doc in blog_docs if doc.exists]
     return [_blog_response(b) for b in blogs]
 
 

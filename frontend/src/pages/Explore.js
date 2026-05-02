@@ -19,7 +19,7 @@ const TECH_COLORS = {
     'node.js': { bg: '#dcfce7', text: '#166534' }, python: { bg: '#fef3c7', text: '#92400e' },
     typescript: { bg: '#dbeafe', text: '#1d4ed8' }, javascript: { bg: '#fef9c3', text: '#854d0e' },
     rust: { bg: '#ffedd5', text: '#9a3412' }, go: { bg: '#e0f2fe', text: '#075985' },
-    mongodb: { bg: '#dcfce7', text: '#14532d' }, fastapi: { bg: '#d1fae5', text: '#065f46' },
+    firestore: { bg: '#dcfce7', text: '#14532d' }, fastapi: { bg: '#d1fae5', text: '#065f46' },
     tailwindcss: { bg: '#e0f2fe', text: '#0c4a6e' },
 };
 const getTechColor = (tech) => TECH_COLORS[tech.toLowerCase().replace(/\s+/g, '')] || { bg: '#f1f5f9', text: '#475569' };
@@ -28,7 +28,7 @@ const getTechColor = (tech) => TECH_COLORS[tech.toLowerCase().replace(/\s+/g, ''
 const TECH_STACKS = [
     'React', 'Vue', 'Angular', 'Next.js', 'Node.js',
     'Python', 'Django', 'FastAPI', 'Go', 'Rust',
-    'TypeScript', 'JavaScript', 'PostgreSQL', 'MongoDB'
+    'TypeScript', 'JavaScript', 'PostgreSQL', 'Firestore'
 ];
 
 // Sort options
