@@ -16,6 +16,7 @@ ENV/
 .env
 .env.local
 .env.*.local
+firebase-credentials.json
 
 # IDE & editors
 .vscode/
