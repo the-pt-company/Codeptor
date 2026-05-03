@@ -1,19 +1,19 @@
 {
-  "short_name": "Codeptor",
-  "name": "Codeptor",
+  "short_name": "KudosDev",
+  "name": "KudosDev",
   "icons": [
     {
-      "src": "Codeptor.png",
+      "src": "KudosDev.png",
       "type": "image/png",
       "sizes": "64x64 32x32 24x24 16x16"
     },
     {
-      "src": "Codeptor.png",
+      "src": "KudosDev.png",
       "type": "image/png",
       "sizes": "192x192"
     },
     {
-      "src": "Codeptor.png",
+      "src": "KudosDev.png",
       "type": "image/png",
       "sizes": "512x512"
     }

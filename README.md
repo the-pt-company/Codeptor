@@ -1,6 +1,6 @@
 <div align="center">
 
-# Codeptor
+# KudosDev
 
 **A full-stack developer portfolio and community platform.**
 
@@ -12,11 +12,11 @@ Build in public. Showcase your work. Track what matters.
 
 ---
 
-## 🎯 What is Codeptor?
+## 🎯 What is KudosDev?
 
-Most developer portfolios are static pages that go stale the moment they're deployed. Codeptor is different — it's a **living platform** where developers can showcase projects, publish technical blogs, and monitor real-time engagement analytics, all from a single, unified interface.
+Most developer portfolios are static pages that go stale the moment they're deployed. KudosDev is different — it's a **living platform** where developers can showcase projects, publish technical blogs, and monitor real-time engagement analytics, all from a single, unified interface.
 
-Whether you're building credibility for your next role or sharing knowledge with the community, Codeptor gives you the tools to do it professionally.
+Whether you're building credibility for your next role or sharing knowledge with the community, KudosDev gives you the tools to do it professionally.
 
 ---
 

@@ -382,7 +382,7 @@ function Step1CoreInfo({ formData, updateField }) {
                     type="text"
                     value={formData.title}
                     onChange={(e) => updateField('title', e.target.value)}
-                    placeholder="e.g., Codeptor Platform"
+                    placeholder="e.g., KudosDev Platform"
                     className="
                         w-full px-4 py-3 rounded-md
                         border border-input bg-background

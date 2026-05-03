@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Github, Linkedin, Mail, ArrowUp } from 'lucide-react';
 import { toast } from 'sonner';
-import { BrandLogo } from './BrandLogo';
 
 export const Footer = () => {
     const [newsletterEmail, setNewsletterEmail] = useState('');
@@ -24,7 +23,7 @@ export const Footer = () => {
             return;
         }
 
-        window.location.href = `mailto:kudosdev7@gmail.com?subject=${encodeURIComponent('Newsletter Subscription Request')}&body=${encodeURIComponent(`Please add ${email} to the Codeptor newsletter list.`)}`;
+        window.location.href = `mailto:kudosdev7@gmail.com?subject=${encodeURIComponent('Newsletter Subscription Request')}&body=${encodeURIComponent(`Please add ${email} to the KudosDev newsletter list.`)}`;
         setNewsletterEmail('');
         toast.success('Opening your mail app to complete subscription');
     };
@@ -36,12 +35,7 @@ export const Footer = () => {
                     {/* Brand Section */}
                     <div className="space-y-6">
                         <Link to="/" className="flex items-center gap-2 group">
-                            <div className="w-10 h-10 bg-white rounded-lg border border-border flex items-center justify-center group-hover:rotate-6 transition-transform">
-                                <BrandLogo size={28} color="#111111" />
-                            </div>
-                            <span className="font-heading font-bold text-2xl text-foreground tracking-tight">
-                                Codeptor
-                            </span>
+                            <img src="/logo.png" alt="Logo" className="h-10 w-auto group-hover:opacity-80 transition-opacity" />
                         </Link>
                         <p className="text-muted-foreground leading-relaxed max-w-xs">
                             The premier platform for developers to showcase their work, build public credibility, and connect with technical opportunities.
@@ -120,7 +114,7 @@ export const Footer = () => {
                 {/* Bottom Bar */}
                 <div className="border-t border-border pt-8 mt-8 flex flex-col md:flex-row justify-between items-center gap-4">
                     <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                        <span>© 2026 Codeptor Inc.</span>
+                        <span>© 2026 KudosDev Inc.</span>
                         <span>Privacy Policy</span>
                         <span>Terms of Service</span>
                     </div>

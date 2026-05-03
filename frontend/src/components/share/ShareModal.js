@@ -16,8 +16,8 @@ const MODAL = {
 export default function ShareModal({ isOpen, onClose, url, title, description, type = 'project', onGenerateCard }) {
     const [copied, setCopied] = useState(false);
     const shareUrl = url || window.location.href;
-    const shareTitle = title || 'Check this out on Codeptor';
-    const shareText = description || 'Found something amazing on Codeptor!';
+    const shareTitle = title || 'Check this out on KudosDev';
+    const shareText = description || 'Found something amazing on KudosDev!';
 
     const copyLink = useCallback(async () => {
         try {

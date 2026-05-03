@@ -18,7 +18,6 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import BlogEditor from './pages/BlogEditor';
 import BlogPost from './pages/BlogPost';
-import BlogExplore from './pages/BlogExplore';
 import BlogManagement from './pages/BlogManagement';
 import ProjectDetail from './pages/ProjectDetail';
 import ProjectDiscussion from './pages/ProjectDiscussion';

@@ -114,7 +114,7 @@ export const Header = () => {
             }}>
                 {/* Logo */}
                 <Link to="/" style={logoStyle}>
-                    Codeptor
+                    KudosDev
                 </Link>
 
                 {/* Navigation */}

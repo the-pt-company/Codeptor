@@ -722,7 +722,7 @@ export default function ProjectDetail() {
                 isOpen={shareOpen}
                 onClose={() => setShareOpen(false)}
                 url={window.location.href}
-                title={`Check out ${project.title} on Codeptor!`}
+                title={`Check out ${project.title} on KudosDev!`}
                 description={project.description}
                 type="project"
                 onGenerateCard={() => setShowShareCard(true)}

@@ -8,9 +8,9 @@ import { Code2, Zap, Users, PenSquare, ArrowRight, Plus } from 'lucide-react';
 /* ─── Inline styles & constants ─────────────────────────────────────────── */
 
 const styles = {
-  /* Page wrapper — white base */
+  /* Page wrapper — logo background color */
   pageRoot: {
-    background: '#ffffff',
+    background: '#F7F7F7',
     minHeight: '100vh',
     position: 'relative',
     overflowX: 'hidden',
@@ -358,7 +358,7 @@ export default function Home() {
         <div style={styles.navbarWrap}>
           <nav style={styles.navbar} aria-label="Main navigation">
             {/* Logo */}
-            <Link to="/" style={styles.navLogo}>Codeptor</Link>
+            <Link to="/" style={styles.navLogo}>KudosDev</Link>
 
             {isAuthenticated ? (
               <>
