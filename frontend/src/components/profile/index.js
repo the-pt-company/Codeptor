@@ -5,3 +5,4 @@ export { AnalyticsCard } from './AnalyticsCard';
 export { SkillsSection } from './SkillsSection';
 export { ActivityTimeline } from './ActivityTimeline';
 export { SocialsSection } from './ResumeSection';
+export { default as VideoCVPlayer } from './VideoCVPlayer';

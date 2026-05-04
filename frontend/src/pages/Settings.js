@@ -44,7 +44,8 @@ export default function Settings() {
         skills: user?.skills?.join(', ') || '',
         github_url: user?.github_url || '',
         linkedin_url: user?.linkedin_url || '',
-        website_url: user?.website_url || ''
+        website_url: user?.website_url || '',
+        video_cv_url: user?.video_cv_url || ''
     });
 
     // Account State
@@ -355,6 +356,24 @@ export default function Settings() {
                                                         onChange={handleProfileChange}
                                                         className="w-full h-10 rounded-md border border-input bg-background pl-10 pr-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:outline-none"
                                                         placeholder="https://yourportfolio.dev"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* Video CV URL */}
+                                            <div>
+                                                <label className="block text-sm font-medium text-foreground mb-2">
+                                                    Video CV Link (YouTube, Vimeo, etc.)
+                                                </label>
+                                                <div className="relative">
+                                                    <Camera className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
+                                                    <input
+                                                        type="url"
+                                                        name="video_cv_url"
+                                                        value={profileData.video_cv_url}
+                                                        onChange={handleProfileChange}
+                                                        className="w-full h-10 rounded-md border border-input bg-background pl-10 pr-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:outline-none"
+                                                        placeholder="https://youtube.com/watch?v=..."
                                                     />
                                                 </div>
                                             </div>

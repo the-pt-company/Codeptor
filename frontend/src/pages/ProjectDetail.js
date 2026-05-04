@@ -9,6 +9,7 @@ import { useTilt } from '../hooks/useTilt';
 import ShareModal from '../components/share/ShareModal';
 import ShareCardModal from '../components/share/ShareCardModal';
 import ProjectVideoPlayer from '../components/project/VideoPlayer';
+import { ProjectQualityScore } from '../components/project/ProjectQuality';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -264,7 +265,7 @@ export default function ProjectDetail() {
                         <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
                         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
 
-                        <motion.div 
+                        <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.6 }}
@@ -356,7 +357,7 @@ export default function ProjectDetail() {
                             <div className="lg:col-span-2 space-y-10">
 
                                 {/* Featured Thumbnail */}
-                                <motion.div 
+                                <motion.div
                                     initial={{ opacity: 0, scale: 0.98 }}
                                     animate={{ opacity: 1, scale: 1 }}
                                     transition={{ delay: 0.2, duration: 0.5 }}
@@ -427,7 +428,7 @@ export default function ProjectDetail() {
                                 )}
 
                                 {/* Project Overview */}
-                                <motion.div 
+                                <motion.div
                                     initial={{ opacity: 0, y: 20 }}
                                     whileInView={{ opacity: 1, y: 0 }}
                                     viewport={{ once: true }}
@@ -482,7 +483,7 @@ export default function ProjectDetail() {
                                 </motion.div>
 
                                 {/* Community Actions */}
-                                <motion.div 
+                                <motion.div
                                     initial={{ opacity: 0, y: 20 }}
                                     whileInView={{ opacity: 1, y: 0 }}
                                     viewport={{ once: true }}
@@ -502,7 +503,7 @@ export default function ProjectDetail() {
                                             className={`group flex items-center gap-3 px-5 py-3 rounded-2xl border-2 font-bold transition-all hover:scale-105 active:scale-95 ${liked
                                                 ? 'bg-amber-50 border-amber-200 text-amber-600'
                                                 : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-amber-200 hover:bg-amber-50 hover:text-amber-600'
-                                            }`}
+                                                }`}
                                         >
                                             <Star className={`w-5 h-5 transition-transform group-hover:scale-125 ${liked ? 'fill-amber-400 text-amber-400' : ''}`} />
                                             <span>Star</span>
@@ -526,7 +527,7 @@ export default function ProjectDetail() {
                                             className={`group flex items-center gap-3 px-5 py-3 rounded-2xl border-2 font-bold transition-all hover:scale-105 active:scale-95 ${isBookmarked
                                                 ? 'bg-violet-50 border-violet-200 text-violet-600'
                                                 : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-600'
-                                            }`}
+                                                }`}
                                         >
                                             <Bookmark className={`w-5 h-5 transition-transform group-hover:scale-125 ${isBookmarked ? 'fill-violet-500 text-violet-500' : ''}`} />
                                             {isBookmarked ? 'Saved' : 'Save'}
@@ -548,7 +549,7 @@ export default function ProjectDetail() {
                             <div className="space-y-6" ref={sidebarRef}>
 
                                 {/* Developer Card */}
-                                <motion.div 
+                                <motion.div
                                     initial={{ opacity: 0, x: 20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ delay: 0.3 }}
@@ -576,8 +577,11 @@ export default function ProjectDetail() {
                                     </Link>
                                 </motion.div>
 
+                                {/* Quality Score Card */}
+                                <ProjectQualityScore project={project} />
+
                                 {/* Links Card */}
-                                <motion.div 
+                                <motion.div
                                     initial={{ opacity: 0, x: 20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ delay: 0.4 }}
@@ -619,7 +623,7 @@ export default function ProjectDetail() {
 
                                 {/* Tech Stack Card */}
                                 {project.tech_stack?.length > 0 && (
-                                    <motion.div 
+                                    <motion.div
                                         initial={{ opacity: 0, x: 20 }}
                                         animate={{ opacity: 1, x: 0 }}
                                         transition={{ delay: 0.5 }}
@@ -645,7 +649,7 @@ export default function ProjectDetail() {
                                 )}
 
                                 {/* Metadata Card */}
-                                <motion.div 
+                                <motion.div
                                     initial={{ opacity: 0, x: 20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ delay: 0.6 }}
@@ -691,16 +695,16 @@ export default function ProjectDetail() {
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: 0.7 }}
                                 >
-                                <Link
-                                    to={`/project/${project.project_id}/discussion`}
-                                    className="group block bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-6 text-center hover:from-slate-800 hover:to-slate-700 transition-all hover:scale-[1.02] shadow-lg shadow-slate-200"
-                                >
-                                    <div className="w-12 h-12 mx-auto rounded-2xl bg-white/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                                        <MessageSquare className="w-6 h-6 text-blue-300" />
-                                    </div>
-                                    <p className="text-white font-bold text-sm mb-1">Join the Discussion</p>
-                                    <p className="text-slate-400 text-xs">Share your thoughts or ask questions</p>
-                                </Link>
+                                    <Link
+                                        to={`/project/${project.project_id}/discussion`}
+                                        className="group block bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-6 text-center hover:from-slate-800 hover:to-slate-700 transition-all hover:scale-[1.02] shadow-lg shadow-slate-200"
+                                    >
+                                        <div className="w-12 h-12 mx-auto rounded-2xl bg-white/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                                            <MessageSquare className="w-6 h-6 text-blue-300" />
+                                        </div>
+                                        <p className="text-white font-bold text-sm mb-1">Join the Discussion</p>
+                                        <p className="text-slate-400 text-xs">Share your thoughts or ask questions</p>
+                                    </Link>
                                 </motion.div>
                             </div>
                         </div>

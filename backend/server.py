@@ -280,6 +280,7 @@ class UserResponse(BaseModel):
     github_url: Optional[str] = None
     linkedin_url: Optional[str] = None
     website_url: Optional[str] = None
+    video_cv_url: Optional[str] = None
     location: Optional[str] = None
     skills: List[str] = []
     created_at: datetime
@@ -295,6 +296,7 @@ class DeveloperResponse(BaseModel):
     github_url: Optional[str] = None
     linkedin_url: Optional[str] = None
     website_url: Optional[str] = None
+    video_cv_url: Optional[str] = None
     location: Optional[str] = None
     skills: List[str] = []
     created_at: datetime
@@ -308,6 +310,7 @@ class UserUpdate(BaseModel):
     github_url: Optional[str] = None
     linkedin_url: Optional[str] = None
     website_url: Optional[str] = None
+    video_cv_url: Optional[str] = None
     location: Optional[str] = None
     skills: Optional[List[str]] = None
 
@@ -501,14 +504,14 @@ def calculate_reading_time(text: str) -> int:
 
 def _user_response(user: dict) -> UserResponse:
     """Build a UserResponse from a raw Firestore document."""
-    return UserResponse(email=user["email"], full_name=user["full_name"], username=user["username"], bio=user.get("bio"), avatar_url=user.get("avatar_url"), github_url=user.get("github_url"), linkedin_url=user.get("linkedin_url"), website_url=user.get("website_url"), location=user.get("location"), skills=user.get("skills", []), created_at=parse_datetime(user["created_at"]))  # type: ignore
+    return UserResponse(email=user["email"], full_name=user["full_name"], username=user["username"], bio=user.get("bio"), avatar_url=user.get("avatar_url"), github_url=user.get("github_url"), linkedin_url=user.get("linkedin_url"), website_url=user.get("website_url"), video_cv_url=user.get("video_cv_url"), location=user.get("location"), skills=user.get("skills", []), created_at=parse_datetime(user["created_at"]))  # type: ignore
 
 
 async def _developer_response(user: dict) -> DeveloperResponse:
     """Build a DeveloperResponse from a raw Firestore document including project count."""
     docs = await db.collection("projects").where(filter=FieldFilter("user_username", "==", user["username"])).get()
     count = len(docs)
-    return DeveloperResponse(full_name=user["full_name"], username=user["username"], bio=user.get("bio"), avatar_url=user.get("avatar_url"), github_url=user.get("github_url"), linkedin_url=user.get("linkedin_url"), website_url=user.get("website_url"), location=user.get("location"), skills=user.get("skills", []), created_at=parse_datetime(user["created_at"]), project_count=count)  # type: ignore
+    return DeveloperResponse(full_name=user["full_name"], username=user["username"], bio=user.get("bio"), avatar_url=user.get("avatar_url"), github_url=user.get("github_url"), linkedin_url=user.get("linkedin_url"), website_url=user.get("website_url"), video_cv_url=user.get("video_cv_url"), location=user.get("location"), skills=user.get("skills", []), created_at=parse_datetime(user["created_at"]), project_count=count)  # type: ignore
 
 
 def _project_response(project: dict) -> ProjectResponse:  # type: ignore
@@ -676,6 +679,7 @@ async def sync_user(
             "github_url": None,
             "linkedin_url": None,
             "website_url": None,
+            "video_cv_url": None,
             "location": None,
             "skills": [],
             "created_at": datetime.now(timezone.utc).isoformat(),
@@ -1028,10 +1032,11 @@ async def get_all_projects(
     if status:
         col_ref = col_ref.where(filter=FieldFilter("status", "==", status))
     col_ref = col_ref.where(filter=FieldFilter("visibility", "==", "public"))
-    col_ref = col_ref.order_by("created_at", direction=firestore.Query.DESCENDING).limit(100)
     
     docs = await col_ref.get()
     projects = [d.to_dict() for d in docs]
+    projects.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+    projects = projects[:100]
     
     if exclude_self and current_user:
         projects = [p for p in projects if p.get("user_email") != current_user["email"] and p.get("github_url")]
@@ -1042,8 +1047,10 @@ async def get_all_projects(
 async def get_my_projects(current_user: dict = Depends(get_current_user)):
     try:
         logger.info(f"Fetching projects for user: {current_user['email']}")
-        docs = await db.collection("projects").where(filter=FieldFilter("user_email", "==", current_user["email"])).order_by("created_at", direction=firestore.Query.DESCENDING).limit(100).get()
+        docs = await db.collection("projects").where(filter=FieldFilter("user_email", "==", current_user["email"])).get()
         projects = [d.to_dict() for d in docs]
+        projects.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+        projects = projects[:100]
         logger.info(f"Found {len(projects)} projects for {current_user['email']}")
         
         response_data = []
@@ -1069,10 +1076,10 @@ async def get_user_projects(username: str, current_user: Optional[dict] = Depend
     col_ref = db.collection("projects").where(filter=FieldFilter("user_username", "==", username))
     if "visibility" in query:
         col_ref = col_ref.where(filter=FieldFilter("visibility", "==", "public"))
-    col_ref = col_ref.order_by("created_at", direction=firestore.Query.DESCENDING).limit(100)
     docs = await col_ref.get()
     projects = [d.to_dict() for d in docs]
-    return [_project_response(p) for p in projects]
+    projects.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+    return [_project_response(p) for p in projects[:100]]
 
 
 @api_router.get("/projects/{project_id}", response_model=ProjectResponse)
@@ -1148,9 +1155,10 @@ async def get_project_comments(project_id: str, current_user: Optional[dict] = D
         raise HTTPException(status_code=404, detail="Project not found")
     _ensure_project_visible(project, current_user)
 
-    docs = await db.collection("project_comments").where(filter=FieldFilter("project_id", "==", project_id)).order_by("created_at", direction=firestore.Query.DESCENDING).limit(100).get()
+    docs = await db.collection("project_comments").where(filter=FieldFilter("project_id", "==", project_id)).get()
     comments = [d.to_dict() for d in docs]
-    return comments
+    comments.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+    return comments[:100]
 
 
 @api_router.post("/projects/{project_id}/comments", response_model=ProjectCommentResponse)
@@ -1518,8 +1526,10 @@ async def add_comment(
 
 @api_router.get("/blogs/{blog_id}/comments", response_model=List[CommentResponse])
 async def get_comments(blog_id: str):
-    docs = await db.collection("comments").where(filter=FieldFilter("blog_id", "==", blog_id)).order_by("created_at").limit(200).get()
+    docs = await db.collection("comments").where(filter=FieldFilter("blog_id", "==", blog_id)).get()
     comments = [d.to_dict() for d in docs]
+    comments.sort(key=lambda x: x.get("created_at", ""))
+    comments = comments[:200]
     result = []
     for c in comments:
         c["created_at"] = parse_datetime(c["created_at"])

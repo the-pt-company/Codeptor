@@ -13,8 +13,10 @@ import {
     AnalyticsCard,
     SkillsSection,
     ActivityTimeline,
-    SocialsSection
+    SocialsSection,
+    VideoCVPlayer
 } from '../components/profile';
+import { ProjectQualityBadge } from '../components/project/ProjectQuality';
 import {
     LayoutGrid, List, Github, Eye, Star,
     Code2, MessageSquare, Users
@@ -447,6 +449,14 @@ export default function Profile() {
                     </div>
                 </div>
             )}
+
+            {/* Video CV Player */}
+            {profileUser?.video_cv_url && (
+                <VideoCVPlayer
+                    url={profileUser.video_cv_url}
+                    userName={profileUser.full_name}
+                />
+            )}
         </div>
     );
 }
@@ -457,7 +467,7 @@ const ProjectCard = ({ project, viewMode }) => {
         return (
             <Link
                 to={`/project/${project.project_id}`}
-                className="flex items-center gap-4 p-4 rounded-lg border border-border hover:border-accent/50 hover:bg-muted/50 transition-all"
+                className="flex items-center gap-4 p-4 rounded-lg border border-border hover:border-accent/50 hover:bg-muted/50 transition-all group"
             >
                 {/* Thumbnail */}
                 <div className="w-16 h-16 rounded-md bg-muted flex-shrink-0 overflow-hidden">
@@ -472,8 +482,11 @@ const ProjectCard = ({ project, viewMode }) => {
 
                 {/* Info */}
                 <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-foreground truncate">{project.title}</h3>
-                    <p className="text-sm text-muted-foreground truncate">{project.description}</p>
+                    <div className="flex items-center gap-2">
+                        <h3 className="font-medium text-foreground truncate group-hover:text-accent transition-colors">{project.title}</h3>
+                        <ProjectQualityBadge project={project} />
+                    </div>
+                    <p className="text-sm text-muted-foreground truncate mt-0.5">{project.description}</p>
                 </div>
 
                 {/* Stats */}
@@ -522,9 +535,12 @@ const ProjectCard = ({ project, viewMode }) => {
 
             {/* Content */}
             <div className="p-4">
-                <h3 className="font-medium text-foreground group-hover:text-accent transition-colors line-clamp-1">
-                    {project.title}
-                </h3>
+                <div className="flex items-start justify-between gap-2">
+                    <h3 className="font-medium text-foreground group-hover:text-accent transition-colors line-clamp-1">
+                        {project.title}
+                    </h3>
+                    <ProjectQualityBadge project={project} className="flex-shrink-0" />
+                </div>
                 <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
                     {project.description}
                 </p>
@@ -536,6 +552,11 @@ const ProjectCard = ({ project, viewMode }) => {
                             {tech}
                         </span>
                     ))}
+                    {project.tech_stack?.length > 3 && (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                            +{project.tech_stack.length - 3}
+                        </span>
+                    )}
                 </div>
 
                 {/* Stats */}
