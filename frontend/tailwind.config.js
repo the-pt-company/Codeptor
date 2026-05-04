@@ -10,6 +10,7 @@ module.exports = {
         primary: ["Inter", "sans-serif"],
         heading: ["Space Grotesk", "sans-serif"],
         mono: ["JetBrains Mono", "monospace"],
+        sora: ["Sora", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -45,6 +46,22 @@ module.exports = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        "nav-button": "hsl(var(--nav-button))",
+        "hero-bg": "hsl(var(--hero-bg))",
+      },
+      keyframes: {
+        "fade-up": {
+          "0%": { opacity: "0", transform: "translateY(20px)", filter: "blur(4px)" },
+          "100%": { opacity: "1", transform: "translateY(0)", filter: "blur(0)" },
+        },
+        "fade-in": {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
+      },
+      animation: {
+        "fade-up": "fade-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+        "fade-in": "fade-in 0.5s ease-out forwards",
       },
       borderRadius: {
         lg: "var(--radius)",

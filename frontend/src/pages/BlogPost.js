@@ -23,10 +23,6 @@ export default function BlogPost() {
     const [loading, setLoading] = useState(true);
     const [bookmarked, setBookmarked] = useState(false);
 
-    useEffect(() => {
-        fetchBlog();
-    }, [fetchBlog]);
-
     const fetchBlog = useCallback(async () => {
         try {
             const res = await blogAPI.getBySlug(slug);
@@ -37,6 +33,10 @@ export default function BlogPost() {
             setLoading(false);
         }
     }, [slug]);
+
+    useEffect(() => {
+        fetchBlog();
+    }, [fetchBlog]);
 
     const toggleBookmark = async () => {
         if (!isAuthenticated) {

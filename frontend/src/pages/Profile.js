@@ -11,9 +11,8 @@ import { toast } from 'sonner';
 import {
     ProfileHeader,
     AnalyticsCard,
-    SkillsSection,
     ActivityTimeline,
-    SocialsSection,
+    AboutMeSection,
     VideoCVPlayer
 } from '../components/profile';
 import { ProjectQualityBadge } from '../components/project/ProjectQuality';
@@ -40,8 +39,6 @@ export default function Profile() {
     const [showUserList, setShowUserList] = useState(null); // 'followers' | 'following' | null
 
     const tiltAnalytics = useTilt(4);
-    const tiltSkills = useTilt(4);
-    const tiltActivity = useTilt(4);
 
     // Determine if viewing own profile
     const isOwnProfile = isAuthenticated && currentUser?.username === username;
@@ -78,13 +75,14 @@ export default function Profile() {
                     setBlogs(blogRes.data || []);
                 } else {
                     const blogRes = await blogAPI.getAll();
-                    const userBlogs = (blogRes.data || []).filter(
-                        b => b.author_username === username
+                    const allBlogs = blogRes.data || [];
+                    const userBlogs = allBlogs.filter(b => 
+                        b.author_username?.toLowerCase() === username.toLowerCase()
                     );
                     setBlogs(userBlogs);
                 }
             } catch (error) {
-                // Blog fetch is non-critical
+                console.error('Failed to fetch blogs:', error);
             }
 
             // Track this profile visit & get analytics
@@ -242,6 +240,10 @@ export default function Profile() {
                     onShowFollowing={() => setShowUserList('following')}
                 />
 
+                {/* ── About Me (bio + tech stack + socials) ── */}
+                <AboutMeSection user={profileUser} isOwnProfile={isOwnProfile} />
+
+                {/* ── Analytics ── */}
                 <div {...tiltAnalytics}>
                     <AnalyticsCard
                         stats={stats}
@@ -250,25 +252,6 @@ export default function Profile() {
                         followingList={following}
                     />
                 </div>
-
-                {/* Two Column Layout for Skills + Activity */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                    <div {...tiltSkills}>
-                        <SkillsSection
-                            skills={profileUser?.skills}
-                            isOwnProfile={isOwnProfile}
-                        />
-                    </div>
-                    <div {...tiltActivity}>
-                        <ActivityTimeline
-                            activities={realActivities}
-                            isOwnProfile={isOwnProfile}
-                        />
-                    </div>
-                </div>
-
-                {/* Socials & Links */}
-                <SocialsSection user={profileUser} isOwnProfile={isOwnProfile} />
 
                 {/* Projects Section */}
                 <div className="bg-card border border-border rounded-xl p-6">
@@ -385,6 +368,12 @@ export default function Profile() {
                         </div>
                     </div>
                 )}
+
+                {/* ── Recent Activity (bottom of page) ── */}
+                <div className="mt-6">
+                    <ActivityTimeline activities={realActivities} isOwnProfile={isOwnProfile} />
+                </div>
+
             </main>
             <Footer />
 

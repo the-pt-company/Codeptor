@@ -23,6 +23,8 @@ import ProjectDetail from './pages/ProjectDetail';
 import ProjectDiscussion from './pages/ProjectDiscussion';
 
 
+import SentinelLanding from './pages/SentinelLanding';
+
 function App() {
   return (
     <ThemeProvider>
@@ -99,6 +101,7 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
+                <Route path="/sentinel" element={<SentinelLanding />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
               <Toaster

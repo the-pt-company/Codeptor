@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { toast } from 'sonner';
-import { Header } from '../layout/Header';
 import { Eye, EyeOff } from 'lucide-react';
 import { GoogleAuthButton } from './GoogleAuthButton';
 import { getErrorMessage } from '../../lib/utils';
+import SentinelBackground from '../sentinel/SentinelBackground';
 
 export const LoginForm = () => {
     const [email, setEmail] = useState('');
@@ -32,12 +32,16 @@ export const LoginForm = () => {
     };
 
     return (
-        <div className="min-h-screen bg-background flex flex-col">
-            <Header />
+        <div className="min-h-screen bg-background flex flex-col md:flex-row overflow-hidden">
+            {/* Left side: Spline Animation */}
+            <div className="hidden md:block w-full md:w-1/2 relative bg-[#0a0a0a] overflow-hidden border-r border-border shrink-0">
+                <SentinelBackground />
+            </div>
 
-            <div className="flex-1 flex items-center justify-center px-4 py-12">
-                <div className="w-full max-w-md space-y-8">
-                    <div className="text-center">
+            {/* Right side: Form */}
+            <div className="w-full md:w-1/2 flex items-center justify-center px-6 lg:px-12 py-8 relative z-10 bg-background overflow-y-auto">
+                <div className="w-full max-w-sm space-y-8">
+                    <div className="text-left">
                         <h1 className="font-heading font-bold text-4xl tracking-tight text-foreground">
                             Welcome Back
                         </h1>
@@ -46,7 +50,7 @@ export const LoginForm = () => {
                         </p>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="mt-8 space-y-6 bg-card border border-border rounded-lg p-8 shadow-sm">
+                    <form onSubmit={handleSubmit} className="mt-8 space-y-6">
                         <div className="space-y-4">
                             <div>
                                 <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
@@ -58,7 +62,7 @@ export const LoginForm = () => {
                                     required
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="flex h-11 w-full rounded-lg border border-input bg-background px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all"
                                     placeholder="you@example.com"
                                 />
                             </div>
@@ -74,7 +78,7 @@ export const LoginForm = () => {
                                         required
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 pr-10 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                        className="flex h-11 w-full rounded-lg border border-input bg-background px-4 pr-11 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all"
                                         placeholder="••••••••"
                                     />
                                     <button
@@ -100,10 +104,19 @@ export const LoginForm = () => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 rounded-md font-medium transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full bg-primary text-primary-foreground hover:brightness-110 h-11 px-4 py-2 rounded-lg font-semibold shadow-lg shadow-primary/20 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {loading ? 'Signing in...' : 'Sign In'}
                         </button>
+
+                        <div className="relative">
+                            <div className="absolute inset-0 flex items-center">
+                                <span className="w-full border-t border-border" />
+                            </div>
+                            <div className="relative flex justify-center text-xs uppercase">
+                                <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+                            </div>
+                        </div>
 
                         <GoogleAuthButton />
 
