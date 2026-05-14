@@ -940,8 +940,7 @@ async def get_followers(username: str):
         return []
 
     user_refs = [db.collection("users").document(email) for email in follower_emails]
-    user_docs = await db.get_all(user_refs)
-    users = [doc.to_dict() for doc in user_docs if doc.exists]
+    users = [doc.to_dict() async for doc in db.get_all(user_refs) if doc.exists]
     return users
 
 
@@ -961,8 +960,7 @@ async def get_following(username: str):
         return []
 
     user_refs = [db.collection("users").document(email) for email in following_emails]
-    user_docs = await db.get_all(user_refs)
-    users = [doc.to_dict() for doc in user_docs if doc.exists]
+    users = [doc.to_dict() async for doc in db.get_all(user_refs) if doc.exists]
     return users
 
 
@@ -1607,8 +1605,7 @@ async def get_bookmarks(current_user: dict = Depends(get_current_user)):
     if not blog_ids:
         return []
     blog_refs = [db.collection("blogs").document(bid) for bid in blog_ids]
-    blog_docs = await db.get_all(blog_refs)
-    blogs = [doc.to_dict() for doc in blog_docs if doc.exists]
+    blogs = [doc.to_dict() async for doc in db.get_all(blog_refs) if doc.exists]
     return [_blog_response(b) for b in blogs]
 
 
