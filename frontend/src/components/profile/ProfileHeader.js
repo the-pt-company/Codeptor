@@ -5,7 +5,6 @@ import { Edit2, Share2, MapPin, Calendar, ExternalLink, Code2, Users, Eye } from
 
 /**
  * ProfileHeader - Displays user avatar, name, bio, and action buttons
- * Renders differently for own profile vs public profile
  */
 export const ProfileHeader = ({ user, isOwnProfile, onFollow, isFollowing, onShare, stats, onShowFollowers, onShowFollowing }) => {
     const navigate = useNavigate();
