@@ -1649,6 +1649,67 @@ async def sse_stream():
 
 
 # ---------------------------------------------------------------------------
+# Newsletter subscription
+# ---------------------------------------------------------------------------
+
+
+class NewsletterSubscribeRequest(BaseModel):
+    email: EmailStr
+
+
+async def send_newsletter_notification(subscriber_email: str) -> bool:
+    """Notify kudosdev7@gmail.com that someone wants to join the community newsletter."""
+    if not all([SMTP_HOST, SMTP_USER, SMTP_PASS]):
+        logger.error("SMTP not configured; cannot send newsletter notification.")
+        return False
+
+    msg = EmailMessage()
+    msg["Subject"] = "New Newsletter Subscription Request"
+    msg["From"] = SMTP_FROM
+    msg["To"] = SMTP_FROM  # notify the KudosD team inbox
+    msg["Reply-To"] = subscriber_email
+    msg.set_content(
+        f"A new user wants to join the KudosDev community newsletter.\n\n"
+        f"Subscriber email: {subscriber_email}\n\n"
+        f"Please add them to your mailing list.\n\n"
+        f"— KudosDev automated notification"
+    )
+
+    try:
+        _use_tls = SMTP_PORT == 465
+        _start_tls = SMTP_PORT == 587
+        await asyncio.wait_for(
+            aiosmtplib.send(
+                msg,
+                hostname=SMTP_HOST,
+                port=SMTP_PORT,
+                username=SMTP_USER,
+                password=SMTP_PASS,
+                use_tls=_use_tls,
+                start_tls=_start_tls,
+            ),
+            timeout=10,
+        )
+        logger.info(f"Newsletter notification sent for subscriber: {subscriber_email}")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to send newsletter notification: {type(e).__name__}: {e}")
+        return False
+
+
+@api_router.post("/newsletter/subscribe")
+async def newsletter_subscribe(request: NewsletterSubscribeRequest):
+    """Receive a community newsletter subscription and notify the KudosDev team."""
+    sent = await send_newsletter_notification(request.email)
+    if not sent:
+        raise HTTPException(
+            status_code=502,
+            detail="Could not process your subscription right now. Please try again later.",
+        )
+    return {"message": "Thank you! You have been added to the KudosDev community list."}
+
+
+# ---------------------------------------------------------------------------
 # Mount router
 # ---------------------------------------------------------------------------
 

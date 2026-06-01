@@ -2,15 +2,17 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Github, Linkedin, Mail, ArrowUp } from 'lucide-react';
 import { toast } from 'sonner';
+import { newsletterAPI } from '../../lib/api';
 
 export const Footer = () => {
     const [newsletterEmail, setNewsletterEmail] = useState('');
+    const [subscribing, setSubscribing] = useState(false);
 
     const scrollToTop = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    const handleNewsletterJoin = () => {
+    const handleNewsletterJoin = async () => {
         const email = newsletterEmail.trim();
         if (!email) {
             toast.error('Please enter your email address');
@@ -23,9 +25,17 @@ export const Footer = () => {
             return;
         }
 
-        window.location.href = `mailto:kudosdev7@gmail.com?subject=${encodeURIComponent('Newsletter Subscription Request')}&body=${encodeURIComponent(`Please add ${email} to the KudosDev newsletter list.`)}`;
-        setNewsletterEmail('');
-        toast.success('Opening your mail app to complete subscription');
+        setSubscribing(true);
+        try {
+            await newsletterAPI.subscribe(email);
+            setNewsletterEmail('');
+            toast.success('🎉 You\'ve joined the KudosDev community!');
+        } catch (err) {
+            const msg = err?.response?.data?.detail || 'Something went wrong. Please try again.';
+            toast.error(msg);
+        } finally {
+            setSubscribing(false);
+        }
     };
 
     return (
@@ -94,9 +104,10 @@ export const Footer = () => {
                             <button
                                 type="button"
                                 onClick={handleNewsletterJoin}
-                                className="bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm font-medium hover:bg-primary/90 transition-all"
+                                disabled={subscribing}
+                                className="bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm font-medium hover:bg-primary/90 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                             >
-                                Join
+                                {subscribing ? 'Joining…' : 'Join'}
                             </button>
                         </div>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">

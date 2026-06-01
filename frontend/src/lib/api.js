@@ -104,6 +104,11 @@ export const blogAPI = {
     }),
 };
 
+// Newsletter API
+export const newsletterAPI = {
+    subscribe: (email) => api.post('/api/newsletter/subscribe', { email }),
+};
+
 // Analytics APIs (separate microservice on port 4000)
 const ANALYTICS_BASE_URL = process.env.REACT_APP_ANALYTICS_URL || 'http://localhost:4000';
 
