@@ -113,10 +113,12 @@ export const Footer = () => {
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <Mail className="w-3.5 h-3.5" />
                             <a
-                                href="mailto:kudosdev7@gmail.com"
+                                href="https://mail.google.com/mail/?view=cm&fs=1&to=the.kudos.dev.company@gmail.com"
+                                target="_blank"
+                                rel="noopener noreferrer"
                                 className="hover:text-foreground transition-colors"
                             >
-                                kudosdev7@gmail.com
+                                the.kudos.dev.company@gmail.com
                             </a>
                         </div>
                     </div>

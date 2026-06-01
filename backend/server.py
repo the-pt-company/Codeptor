@@ -1658,7 +1658,7 @@ class NewsletterSubscribeRequest(BaseModel):
 
 
 async def send_newsletter_notification(subscriber_email: str) -> bool:
-    """Notify kudosdev7@gmail.com that someone wants to join the community newsletter."""
+    """Notify the.kudos.dev.company@gmail.com that someone wants to join the community newsletter."""
     if not all([SMTP_HOST, SMTP_USER, SMTP_PASS]):
         logger.error("SMTP not configured; cannot send newsletter notification.")
         return False
