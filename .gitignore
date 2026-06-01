@@ -50,3 +50,4 @@ dist/
 .emergent/
 CAREERS_README.md
 TECH_STACK.md
+*firebase-adminsdk*.json

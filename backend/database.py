@@ -38,11 +38,12 @@ try:
             })
             logger.info(f"Firebase initialized via FIREBASE_CREDENTIALS_PATH (bucket: {bucket_name})")
         else:
-            # Fallback for default initialization (e.g., when deployed on GCP with IAM)
-            firebase_admin.initialize_app(options={
-                'storageBucket': bucket_name
-            })
-            logger.info("Firebase initialized via default credentials")
+            raise EnvironmentError(
+                "Firebase credentials not found. "
+                "Set FIREBASE_CREDENTIALS_JSON (service account JSON string) "
+                "or FIREBASE_CREDENTIALS_PATH (path to service account JSON file) "
+                "in your environment variables."
+            )
             
     # Get async Firestore client
     db = firestore_async.client()
