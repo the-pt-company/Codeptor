@@ -18,7 +18,7 @@ services:
       - key: GOOGLE_CLIENT_ID
         sync: false          # Set manually in Render dashboard
       - key: FRONTEND_URL
-        value: https://kudosd.vercel.app   # Update to your Vercel domain
+        value: https://kudos-dev-eight.vercel.app
       - key: SMTP_HOST
         sync: false          # Set manually in Render dashboard
       - key: SMTP_PORT
