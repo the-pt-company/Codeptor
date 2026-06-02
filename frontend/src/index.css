@@ -1,45 +1,75 @@
-@import url('https://fonts.googleapis.com/css2?family=Fustat:wght@200..800&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Space+Grotesk:wght@300..700&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Sora:wght@300..700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500&family=Fustat:wght@200..800&family=Space+Grotesk:wght@300..700&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Sora:wght@300..700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
+  /* ── LIGHT MODE (default / :root) ─────────────────────────────────────── */
   :root {
-    --background: 0 0% 97%;
-    --foreground: 220 20% 8%;
+    --background: 210 40% 96%;
+    --foreground: 220 30% 10%;
     --card: 0 0% 100%;
-    --card-foreground: 220 20% 8%;
+    --card-foreground: 220 30% 10%;
     --popover: 0 0% 100%;
-    --popover-foreground: 220 20% 8%;
-    /* Electric blue primary */
-    --primary: 210 100% 50%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 220 20% 8%;
-    --muted: 210 30% 95%;
-    --muted-foreground: 215 16% 47%;
-    --accent: 210 100% 50%;
+    --popover-foreground: 220 30% 10%;
+    --primary: 220 30% 10%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 210 20% 90%;
+    --secondary-foreground: 220 30% 10%;
+    --muted: 210 20% 90%;
+    --muted-foreground: 220 15% 45%;
+    --accent: 210 20% 90%;
+    --accent-foreground: 220 30% 10%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 15% 78%;
+    --input: 220 15% 78%;
+    --ring: 220 30% 10%;
+    --radius: 0.625rem;
+
+    /* Typography tokens */
+    --font-display: 'Instrument Serif', serif;
+    --font-body: 'Inter', sans-serif;
+  }
+
+  /* ── DARK MODE (.dark on <html>) ──────────────────────────────────────── */
+  .dark {
+    --background: 201 100% 13%;
+    --foreground: 0 0% 100%;
+    --card: 201 60% 10%;
+    --card-foreground: 0 0% 100%;
+    --popover: 201 60% 10%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 0 0% 100%;
+    --primary-foreground: 0 0% 4%;
+    --secondary: 0 0% 10%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 0 0% 10%;
+    --muted-foreground: 240 4% 66%;
+    --accent: 0 0% 10%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 214 30% 90%;
-    --input: 214 30% 90%;
-    --ring: 210 100% 50%;
-    --radius: 0.625rem;
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 0 0% 100%;
   }
 
   * {
     @apply border-border;
+    box-sizing: border-box;
   }
 
   body {
-    @apply bg-background text-foreground font-primary;
+    font-family: var(--font-body);
+    @apply bg-background text-foreground;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 
-  /* SENTINEL AI THEME */
+  /* SENTINEL AI THEME (preserved) */
   .sentinel-theme {
     --background: 0 0% 10%;
     --foreground: 0 0% 96%;
@@ -58,7 +88,116 @@
     --radius: 0.5rem;
     --nav-button: 0 0% 18%;
     --hero-bg: 0 0% 8%;
-    
+
     @apply font-sora antialiased bg-hero-bg text-foreground;
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LIQUID GLASS — dark mode (moody, minimal blur)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.dark .liquid-glass {
+  background: rgba(255, 255, 255, 0.01);
+  background-blend-mode: luminosity;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: none;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.dark .liquid-glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.4px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.45) 0%,
+    rgba(255, 255, 255, 0.15) 20%,
+    rgba(255, 255, 255, 0)    40%,
+    rgba(255, 255, 255, 0)    60%,
+    rgba(255, 255, 255, 0.15) 80%,
+    rgba(255, 255, 255, 0.45) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LIQUID GLASS — light mode (frosted, bright, airy)
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root:not(.dark) .liquid-glass {
+  background: rgba(255, 255, 255, 0.45);
+  background-blend-mode: screen;
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  border: none;
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.9),
+    0 4px 24px rgba(0, 0, 0, 0.06);
+  position: relative;
+  overflow: hidden;
+}
+
+:root:not(.dark) .liquid-glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.4px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(255, 255, 255, 0.5)  20%,
+    rgba(255, 255, 255, 0.1)  40%,
+    rgba(255, 255, 255, 0.1)  60%,
+    rgba(255, 255, 255, 0.5)  80%,
+    rgba(255, 255, 255, 0.95) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box,
+                linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ANIMATIONS — dark mode (sharp, fast, cinematic)
+   ═══════════════════════════════════════════════════════════════════════════ */
+@keyframes fade-rise-dark {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.dark .animate-fade-rise {
+  animation: fade-rise-dark 0.8s ease-out both;
+}
+.dark .animate-fade-rise-delay {
+  animation: fade-rise-dark 0.8s ease-out 0.2s both;
+}
+.dark .animate-fade-rise-delay-2 {
+  animation: fade-rise-dark 0.8s ease-out 0.4s both;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ANIMATIONS — light mode (slower, softer, golden-hour feel)
+   ═══════════════════════════════════════════════════════════════════════════ */
+@keyframes fade-rise-light {
+  from { opacity: 0; transform: translateY(20px); filter: blur(4px); }
+  to   { opacity: 1; transform: translateY(0);    filter: blur(0px); }
+}
+
+:root:not(.dark) .animate-fade-rise {
+  animation: fade-rise-light 1.0s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+:root:not(.dark) .animate-fade-rise-delay {
+  animation: fade-rise-light 1.0s cubic-bezier(0.22, 1, 0.36, 1) 0.25s both;
+}
+:root:not(.dark) .animate-fade-rise-delay-2 {
+  animation: fade-rise-light 1.0s cubic-bezier(0.22, 1, 0.36, 1) 0.5s both;
 }

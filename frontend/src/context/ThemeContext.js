@@ -1,14 +1,36 @@
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
-// Dark theme has been removed. This stub always returns light mode
-// so that any component using useTheme() continues to work without changes.
-const ThemeContext = createContext({ theme: 'light', toggleTheme: () => {} });
+const ThemeContext = createContext({ theme: 'dark', toggleTheme: () => {} });
 
-export const ThemeProvider = ({ children }) => (
-    <ThemeContext.Provider value={{ theme: 'light', toggleTheme: () => {} }}>
-        {children}
-    </ThemeContext.Provider>
-);
+export const ThemeProvider = ({ children }) => {
+    const [theme, setTheme] = useState(() => {
+        try {
+            return localStorage.getItem('kudos-theme') || 'dark';
+        } catch {
+            return 'dark';
+        }
+    });
+
+    useEffect(() => {
+        const root = document.documentElement;
+        if (theme === 'dark') {
+            root.classList.add('dark');
+        } else {
+            root.classList.remove('dark');
+        }
+        try {
+            localStorage.setItem('kudos-theme', theme);
+        } catch { /* ignore */ }
+    }, [theme]);
+
+    const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+
+    return (
+        <ThemeContext.Provider value={{ theme, toggleTheme }}>
+            {children}
+        </ThemeContext.Provider>
+    );
+};
 
 export const useTheme = () => {
     const context = useContext(ThemeContext);
