@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
 import { AuthProvider } from './context/AuthContext';
-import { ThemeProvider, useTheme } from './context/ThemeContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { Toaster } from 'sonner';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import Home from './pages/Home';
@@ -25,12 +25,20 @@ import ProjectDiscussion from './pages/ProjectDiscussion';
 
 import SentinelLanding from './pages/SentinelLanding';
 
+function AppShell({ children }) {
+  return (
+    <div className="App min-h-screen bg-background text-foreground transition-colors duration-300">
+      {children}
+    </div>
+  );
+}
+
 function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
           <BrowserRouter>
-            <div className="App min-h-screen bg-background text-foreground transition-colors duration-300">
+            <AppShell>
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/login" element={<Login />} />
@@ -108,7 +116,7 @@ function App() {
                 position="top-right"
                 richColors
               />
-            </div>
+            </AppShell>
           </BrowserRouter>
       </AuthProvider>
     </ThemeProvider>

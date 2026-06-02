@@ -7,53 +7,51 @@
 @layer base {
   /* ── LIGHT MODE (default / :root) ─────────────────────────────────────── */
   :root {
-    --background: 210 40% 96%;
-    --foreground: 220 30% 10%;
+    --background: 220 25% 97%;
+    --foreground: 220 40% 12%;
     --card: 0 0% 100%;
-    --card-foreground: 220 30% 10%;
+    --card-foreground: 220 40% 12%;
     --popover: 0 0% 100%;
-    --popover-foreground: 220 30% 10%;
-    --primary: 220 30% 10%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 210 20% 90%;
-    --secondary-foreground: 220 30% 10%;
-    --muted: 210 20% 90%;
+    --popover-foreground: 220 40% 12%;
+    --primary: 215 90% 55%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 20% 90%;
+    --secondary-foreground: 220 40% 12%;
+    --muted: 220 15% 92%;
     --muted-foreground: 220 15% 45%;
-    --accent: 210 20% 90%;
-    --accent-foreground: 220 30% 10%;
+    --accent: 280 75% 58%;
+    --accent-foreground: 0 0% 100%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 15% 78%;
-    --input: 220 15% 78%;
-    --ring: 220 30% 10%;
-    --radius: 0.625rem;
-
-    /* Typography tokens */
+    --border: 220 15% 85%;
+    --input: 220 15% 85%;
+    --ring: 215 90% 55%;
+    --radius: 0.75rem;
     --font-display: 'Instrument Serif', serif;
     --font-body: 'Inter', sans-serif;
   }
 
-  /* ── DARK MODE (.dark on <html>) ──────────────────────────────────────── */
-  .dark {
-    --background: 201 100% 13%;
-    --foreground: 0 0% 100%;
-    --card: 201 60% 10%;
-    --card-foreground: 0 0% 100%;
-    --popover: 201 60% 10%;
-    --popover-foreground: 0 0% 100%;
-    --primary: 0 0% 100%;
-    --primary-foreground: 0 0% 4%;
-    --secondary: 0 0% 10%;
-    --secondary-foreground: 0 0% 100%;
-    --muted: 0 0% 10%;
-    --muted-foreground: 240 4% 66%;
-    --accent: 0 0% 10%;
-    --accent-foreground: 0 0% 100%;
+  /* ── DARK MODE (html.dark) ────────────────────────────────────────────── */
+  html.dark {
+    --background: 220 40% 6%;
+    --foreground: 215 15% 95%;
+    --card: 220 30% 10%;
+    --card-foreground: 215 15% 95%;
+    --popover: 220 30% 10%;
+    --popover-foreground: 215 15% 95%;
+    --primary: 215 100% 60%;
+    --primary-foreground: 220 40% 6%;
+    --secondary: 220 20% 15%;
+    --secondary-foreground: 215 15% 95%;
+    --muted: 220 20% 14%;
+    --muted-foreground: 220 15% 65%;
+    --accent: 280 80% 65%;
+    --accent-foreground: 215 15% 95%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 18%;
-    --input: 0 0% 18%;
-    --ring: 0 0% 100%;
+    --border: 220 20% 18%;
+    --input: 220 20% 18%;
+    --ring: 215 100% 60%;
   }
 
   * {
@@ -66,7 +64,7 @@
     @apply bg-background text-foreground;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    transition: background-color 0.35s ease, color 0.35s ease;
   }
 
   /* SENTINEL AI THEME (preserved) */
@@ -88,15 +86,14 @@
     --radius: 0.5rem;
     --nav-button: 0 0% 18%;
     --hero-bg: 0 0% 8%;
-
     @apply font-sora antialiased bg-hero-bg text-foreground;
   }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   LIQUID GLASS — dark mode (moody, minimal blur)
+   LIQUID GLASS — DARK MODE  (moody, near-invisible, thin rim)
    ═══════════════════════════════════════════════════════════════════════════ */
-.dark .liquid-glass {
+html.dark .liquid-glass {
   background: rgba(255, 255, 255, 0.01);
   background-blend-mode: luminosity;
   backdrop-filter: blur(4px);
@@ -107,7 +104,7 @@
   overflow: hidden;
 }
 
-.dark .liquid-glass::before {
+html.dark .liquid-glass::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -129,75 +126,55 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   LIQUID GLASS — light mode (frosted, bright, airy)
+   LIQUID GLASS — LIGHT MODE  (dark smoked glass for maximum contrast on bright sky)
    ═══════════════════════════════════════════════════════════════════════════ */
-:root:not(.dark) .liquid-glass {
-  background: rgba(255, 255, 255, 0.45);
-  background-blend-mode: screen;
-  backdrop-filter: blur(12px) saturate(160%);
-  -webkit-backdrop-filter: blur(12px) saturate(160%);
-  border: none;
-  box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.9),
-    0 4px 24px rgba(0, 0, 0, 0.06);
+html:not(.dark) .liquid-glass {
+  background: rgba(15, 20, 25, 0.85); /* Deep dark smoked glass */
+  color: #ffffff !important;          /* Force white text/icons */
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
   position: relative;
   overflow: hidden;
 }
 
-:root:not(.dark) .liquid-glass::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1.4px;
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.95) 0%,
-    rgba(255, 255, 255, 0.5)  20%,
-    rgba(255, 255, 255, 0.1)  40%,
-    rgba(255, 255, 255, 0.1)  60%,
-    rgba(255, 255, 255, 0.5)  80%,
-    rgba(255, 255, 255, 0.95) 100%
-  );
-  -webkit-mask: linear-gradient(#fff 0 0) content-box,
-                linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
+html:not(.dark) .liquid-glass::before {
+  display: none; /* We don't need the complex gradient mask in light mode anymore */
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   ANIMATIONS — dark mode (sharp, fast, cinematic)
+   ANIMATIONS — DARK MODE  (sharp, fast, cinematic)
    ═══════════════════════════════════════════════════════════════════════════ */
 @keyframes fade-rise-dark {
   from { opacity: 0; transform: translateY(24px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-.dark .animate-fade-rise {
+html.dark .animate-fade-rise {
   animation: fade-rise-dark 0.8s ease-out both;
 }
-.dark .animate-fade-rise-delay {
+html.dark .animate-fade-rise-delay {
   animation: fade-rise-dark 0.8s ease-out 0.2s both;
 }
-.dark .animate-fade-rise-delay-2 {
+html.dark .animate-fade-rise-delay-2 {
   animation: fade-rise-dark 0.8s ease-out 0.4s both;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   ANIMATIONS — light mode (slower, softer, golden-hour feel)
+   ANIMATIONS — LIGHT MODE  (slower, softer, golden-hour dissolve)
    ═══════════════════════════════════════════════════════════════════════════ */
 @keyframes fade-rise-light {
   from { opacity: 0; transform: translateY(20px); filter: blur(4px); }
   to   { opacity: 1; transform: translateY(0);    filter: blur(0px); }
 }
 
-:root:not(.dark) .animate-fade-rise {
+html:not(.dark) .animate-fade-rise {
   animation: fade-rise-light 1.0s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
-:root:not(.dark) .animate-fade-rise-delay {
+html:not(.dark) .animate-fade-rise-delay {
   animation: fade-rise-light 1.0s cubic-bezier(0.22, 1, 0.36, 1) 0.25s both;
 }
-:root:not(.dark) .animate-fade-rise-delay-2 {
+html:not(.dark) .animate-fade-rise-delay-2 {
   animation: fade-rise-light 1.0s cubic-bezier(0.22, 1, 0.36, 1) 0.5s both;
 }
