@@ -85,17 +85,16 @@ export default function Settings() {
 
         const toastId = toast.loading('Uploading avatar...');
         try {
-            // Reusing blogAPI.uploadImage for simplicity if backend endpoint is general enough
-            // or we could add a specific user upload endpoint.
+            // Reusing blogAPI.uploadImage for avatar upload.
+            // res.data.url is already an absolute Firebase Storage URL — use it directly.
             const res = await blogAPI.uploadImage(formData);
-            const imageUrl = `${process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000'}${res.data.url}`;
+            const imageUrl = res.data.url;
 
             setProfileData(prev => ({ ...prev, avatar_url: imageUrl }));
             toast.success('Avatar uploaded! Click Save Changes to finish.', { id: toastId });
         } catch (error) {
             toast.error('Failed to upload avatar', { id: toastId });
         } finally {
-
             e.target.value = ''; // Reset input
         }
     };
@@ -119,20 +118,9 @@ export default function Settings() {
 
     const handleAccountSubmit = async (e) => {
         e.preventDefault();
-        if (accountData.newPassword !== accountData.confirmPassword) {
-            toast.error('New passwords do not match');
-            return;
-        }
-        setLoading(true);
-        try {
-            // Only update email for now as password change might need a different endpoint
-            await updateUser({ email: accountData.email });
-            toast.success('Account settings updated');
-        } catch (error) {
-            toast.error(error.response?.data?.detail || 'Failed to update account');
-        } finally {
-            setLoading(false);
-        }
+        // Email changes and password changes are managed through Firebase directly.
+        // The backend UserUpdate model does not accept email modifications.
+        toast.info('To change your email or password, please use the Firebase account portal or contact support.');
     };
 
     // Fetch bookmarked blogs when the bookmarks tab is active
@@ -397,7 +385,7 @@ export default function Settings() {
                         {activeTab === 'account' && (
                             <form onSubmit={handleAccountSubmit} className="space-y-6">
                                 <div className="space-y-4">
-                                    {/* Email */}
+                                    {/* Email — read-only, managed via Firebase */}
                                     <div>
                                         <label className="block text-sm font-medium text-foreground mb-2">
                                             Email Address
@@ -408,10 +396,13 @@ export default function Settings() {
                                                 type="email"
                                                 name="email"
                                                 value={accountData.email}
-                                                onChange={handleAccountChange}
-                                                className="w-full h-10 rounded-md border border-input bg-background pl-10 pr-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:outline-none"
+                                                readOnly
+                                                className="w-full h-10 rounded-md border border-input bg-muted pl-10 pr-3 py-2 text-sm text-muted-foreground cursor-not-allowed"
                                             />
                                         </div>
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            Email changes are managed through your authentication provider.
+                                        </p>
                                     </div>
 
                                     <div className="pt-4 mt-4 border-t border-border">

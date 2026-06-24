@@ -82,8 +82,18 @@ export default function PublishProject() {
     const navigate = useNavigate();
     const { projectId } = useParams();
     const isEditMode = Boolean(projectId);
+    const DRAFT_KEY = `kudosd_project_draft_${projectId || 'new'}`;
     const [currentStep, setCurrentStep] = useState(1);
-    const [formData, setFormData] = useState(initialFormData);
+    const [formData, setFormData] = useState(() => {
+        // Restore draft on mount for new projects
+        if (!projectId) {
+            try {
+                const saved = localStorage.getItem('kudosd_project_draft_new');
+                if (saved) return { ...initialFormData, ...JSON.parse(saved) };
+            } catch { /* ignore parse errors */ }
+        }
+        return initialFormData;
+    });
     const [isLoading, setIsLoading] = useState(false);
     const [showVersionForm, setShowVersionForm] = useState(false);
 
@@ -193,14 +203,37 @@ export default function PublishProject() {
         }
     };
 
-    // Save as draft
-    const handleSaveDraft = async () => {
+    // Save as draft to localStorage (serializable fields only — no File objects)
+    const handleSaveDraft = () => {
         try {
-            toast.success('Draft saved successfully');
-            // TODO: Implement draft saving to localStorage or backend
+            const draftData = {
+                title: formData.title,
+                tagline: formData.tagline,
+                description: formData.description,
+                category: formData.category,
+                difficulty: formData.difficulty,
+                tech_stack: formData.tech_stack,
+                github_url: formData.github_url,
+                live_url: formData.live_url,
+                video_url: formData.video_url,
+                documentation_url: formData.documentation_url,
+                visibility: formData.visibility,
+                status: formData.status,
+                tags: formData.tags,
+                pinToProfile: formData.pinToProfile,
+                enableComments: formData.enableComments,
+                showInExplore: formData.showInExplore,
+            };
+            localStorage.setItem(DRAFT_KEY, JSON.stringify(draftData));
+            toast.success('Draft saved locally!');
         } catch (error) {
             toast.error('Failed to save draft');
         }
+    };
+
+    // Clear draft from localStorage after successful publish
+    const handleClearDraft = () => {
+        try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
     };
 
     // Publish project
@@ -264,6 +297,7 @@ export default function PublishProject() {
                 await projectAPI.create(projectData);
                 toast.success('Project published successfully!');
             }
+            handleClearDraft();
             navigate('/dashboard');
         } catch (error) {
             console.error('Publish error:', error);

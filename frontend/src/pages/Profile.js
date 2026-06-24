@@ -74,12 +74,11 @@ export default function Profile() {
                     const blogRes = await blogAPI.getMy();
                     setBlogs(blogRes.data || []);
                 } else {
-                    const blogRes = await blogAPI.getAll();
-                    const allBlogs = blogRes.data || [];
-                    const userBlogs = allBlogs.filter(b => 
-                        b.author_username?.toLowerCase() === username.toLowerCase()
-                    );
-                    setBlogs(userBlogs);
+                    // Pass author_username to the backend so Firestore filters server-side.
+                    // Previously fetched all blogs and filtered client-side, which missed
+                    // users whose blogs weren't in the first page of results.
+                    const blogRes = await blogAPI.getAll({ author_username: username, limit: 100 });
+                    setBlogs(blogRes.data || []);
                 }
             } catch (error) {
                 console.error('Failed to fetch blogs:', error);

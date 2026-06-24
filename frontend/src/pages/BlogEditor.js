@@ -172,7 +172,8 @@ export default function BlogEditor() {
         const id = toast.loading('Uploading image...');
         try {
             const res = await blogAPI.uploadImage(formData);
-            const imageUrl = `${process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000'}${res.data.url}`;
+            // res.data.url is already an absolute Firebase Storage URL — use it directly.
+            const imageUrl = res.data.url;
 
             // Insert into markdown
             const textarea = textareaRef.current;

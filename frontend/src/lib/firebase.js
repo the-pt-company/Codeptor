@@ -2,15 +2,17 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 
-// Your web app's Firebase configuration
+// Firebase configuration — values are loaded from environment variables.
+// For Create React App (react-scripts), all client-side env vars must be
+// prefixed with REACT_APP_. See frontend/.env for the full list.
 const firebaseConfig = {
-  apiKey: "AIzaSyBqR8LHV-blJzMcOaoL1LeoR3pT2btrKzQ",
-  authDomain: "kudosdev-44520.firebaseapp.com",
-  projectId: "kudosdev-44520",
-  storageBucket: "kudosdev-44520.firebasestorage.app",
-  messagingSenderId: "222567250714",
-  appId: "1:222567250714:web:f48c6f6f1d2f948d2b0aa3",
-  measurementId: "G-SWGFJL1QJM"
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.REACT_APP_FIREBASE_APP_ID,
+  measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID,
 };
 
 // Initialize Firebase

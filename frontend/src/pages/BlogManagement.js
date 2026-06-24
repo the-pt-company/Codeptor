@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { blogAPI } from '../lib/api';
-import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
 import { Header } from '../components/layout/Header';
 import { Footer } from '../components/layout/Footer';
@@ -12,7 +11,6 @@ import {
 
 export default function BlogManagement() {
     const navigate = useNavigate();
-    useAuth();
     const [blogs, setBlogs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('all');
@@ -42,7 +40,6 @@ export default function BlogManagement() {
     const handleDelete = async (blogId) => {
         if (window.confirm('Are you sure you want to delete this blog?')) {
             try {
-                console.log('Attempting to delete blog:', blogId);
                 await blogAPI.delete(blogId);
                 setBlogs(blogs.filter(b => b.blog_id !== blogId));
                 toast.success('Blog deleted');

@@ -845,31 +845,48 @@ async def get_developers(
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100)
 ):
-    query = {}
-    if q:
-        query = {
-            "$or": [
-                {"full_name": {"$regex": q, "$options": "i"}},
-                {"username": {"$regex": q, "$options": "i"}}
-            ]
-        }
-    
-    # Firestore doesn't support OR queries natively like MongoDB for text search, 
-    # and doesn't do regex. We fetch all users and filter in memory since user base is small.
-    # We apply limit and skip in memory too.
+    # Firestore doesn't support OR/regex queries; fetch all users and filter in memory.
     all_users_docs = await db.collection("users").get()
     all_users = [d.to_dict() for d in all_users_docs]
     if q:
         q_lower = q.lower()
-        all_users = [u for u in all_users if q_lower in u.get("full_name", "").lower() or q_lower in u.get("username", "").lower()]
+        all_users = [
+            u for u in all_users
+            if q_lower in u.get("full_name", "").lower()
+            or q_lower in u.get("username", "").lower()
+        ]
     users = all_users[skip : skip + limit]
-    
+
+    # Batch-fetch all projects once and count per username to avoid N+1 queries.
+    all_projects_docs = await db.collection("projects").get()
+    project_count_map: dict[str, int] = {}
+    for doc in all_projects_docs:
+        p = doc.to_dict()
+        uname = p.get("user_username", "")
+        if uname:
+            project_count_map[uname] = project_count_map.get(uname, 0) + 1
+
     developers = []
     for u in users:
-        dev = await _developer_response(u)
+        count = project_count_map.get(u.get("username", ""), 0)
+        dev = DeveloperResponse(
+            full_name=u["full_name"],
+            username=u["username"],
+            bio=u.get("bio"),
+            avatar_url=u.get("avatar_url"),
+            github_url=u.get("github_url"),
+            linkedin_url=u.get("linkedin_url"),
+            website_url=u.get("website_url"),
+            video_cv_url=u.get("video_cv_url"),
+            location=u.get("location"),
+            skills=u.get("skills", []),
+            created_at=parse_datetime(u["created_at"]),
+            project_count=count,
+        )  # type: ignore
         developers.append(dev)
-    
+
     return developers
+
 
 
 @api_router.get("/users/{username}", response_model=UserResponse)
@@ -1010,21 +1027,11 @@ async def create_project(project_data: ProjectCreate, current_user: dict = Depen
 
 @api_router.get("/projects", response_model=List[ProjectResponse])
 async def get_all_projects(
-    category: Optional[str] = None, 
+    category: Optional[str] = None,
     status: Optional[str] = None,
     exclude_self: bool = False,
     current_user: Optional[dict] = Depends(get_optional_user)
 ):
-    query: dict[str, Any] = {"visibility": "public"}
-    if category:
-        query["category"] = category
-    if status:
-        query["status"] = status
-    
-    if exclude_self and current_user:
-        query["user_email"] = {"$ne": current_user["email"]}
-        query["github_url"] = {"$exists": True, "$nin": [None, ""]}
-
     col_ref = db.collection("projects")
     if category:
         col_ref = col_ref.where(filter=FieldFilter("category", "==", category))
@@ -1068,12 +1075,9 @@ async def get_my_projects(current_user: dict = Depends(get_current_user)):
 
 @api_router.get("/projects/user/{username}", response_model=List[ProjectResponse])
 async def get_user_projects(username: str, current_user: Optional[dict] = Depends(get_optional_user)):
-    query: dict[str, Any] = {"user_username": username}
-    if not current_user or current_user.get("username") != username:
-        query["visibility"] = "public"
-
     col_ref = db.collection("projects").where(filter=FieldFilter("user_username", "==", username))
-    if "visibility" in query:
+    # Only show public projects unless the requesting user owns the profile
+    if not current_user or current_user.get("username") != username:
         col_ref = col_ref.where(filter=FieldFilter("visibility", "==", "public"))
     docs = await col_ref.get()
     projects = [d.to_dict() for d in docs]
@@ -1260,19 +1264,17 @@ async def create_blog(blog_data: BlogCreate, current_user: dict = Depends(get_cu
 async def get_all_blogs(
     tag: Optional[str] = None,
     category: Optional[str] = None,
+    author_username: Optional[str] = None,
     limit: int = 20,
     skip: int = 0,
 ):
-    query = {"status": "published"}
-    if tag:
-        query["tags"] = tag
-    if category:
-        query["category"] = category
     col_ref = db.collection("blogs").where(filter=FieldFilter("status", "==", "published"))
     if tag:
         col_ref = col_ref.where(filter=FieldFilter("tags", "array_contains", tag))
     if category:
         col_ref = col_ref.where(filter=FieldFilter("category", "==", category))
+    if author_username:
+        col_ref = col_ref.where(filter=FieldFilter("author_username", "==", author_username))
     col_ref = col_ref.order_by("published_at", direction=firestore.Query.DESCENDING).offset(skip).limit(limit)
     docs = await col_ref.get()
     blogs = [d.to_dict() for d in docs]
@@ -1526,7 +1528,11 @@ async def add_comment(
 @api_router.get("/blogs/{blog_id}/comments", response_model=List[CommentResponse])
 async def get_comments(blog_id: str):
     docs = await db.collection("comments").where(filter=FieldFilter("blog_id", "==", blog_id)).get()
-    comments = [d.to_dict() for d in docs]
+    comments = []
+    for d in docs:
+        c = d.to_dict()
+        if c is not None:
+            comments.append(c)
     comments.sort(key=lambda x: x.get("created_at", ""))
     comments = comments[:200]
     result = []

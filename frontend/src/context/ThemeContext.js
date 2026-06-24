@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-const ThemeContext = createContext({ theme: 'dark', toggleTheme: () => {} });
+// Using undefined as default so useTheme correctly throws if called outside ThemeProvider
+const ThemeContext = createContext(undefined);
 
 export const ThemeProvider = ({ children }) => {
     const [theme, setTheme] = useState(() => {

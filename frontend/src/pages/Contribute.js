@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Header } from '../components/layout/Header';
 import { Footer } from '../components/layout/Footer';
-import { useAuth } from '../context/AuthContext';
 import {
     Users, Rocket, Search, Clock,
     Github, Loader2, RefreshCw, Code2,
@@ -28,7 +27,6 @@ const formatTimeAgo = (dateStr) => {
 };
 
 export default function Contribute() {
-    useAuth();
     const [searchQuery, setSearchQuery] = useState('');
     const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(true);

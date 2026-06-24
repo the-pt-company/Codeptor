@@ -66,7 +66,7 @@ export default function BlogPost() {
         try {
             await blogAPI.delete(blog.blog_id);
             toast.success('Blog deleted successfully');
-            navigate('/blogs');
+            navigate('/dashboard/blogs');
         } catch {
             toast.error('Failed to delete blog');
         }
